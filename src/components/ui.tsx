@@ -4,7 +4,7 @@ import { useCallback, useEffect, useRef, useState, type ReactNode } from "react"
 import { ActivityIndicator, Platform, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { ago, dateTime, duration, FINISHED, LIVE_MATCH, until, views, type Item, type Match, type Source, type Standing } from "../lib/data";
-import { SHADES, useTheme, type Theme } from "../lib/theme";
+import { CREST_URL, SHADES, useTheme, type Theme } from "../lib/theme";
 
 export const DISPLAY = Platform.select({ web: "'Barlow Condensed','Arial Narrow',system-ui,sans-serif", default: undefined });
 
@@ -32,19 +32,42 @@ export function useLoad<T>(fn: () => Promise<T>, deps: unknown[], initial: T) {
   return { data, loading, refreshing, error, reload: () => load(true) };
 }
 
-// ---------- cabeçalho ----------
+// ---------- cabeçalho tricolor ----------
+/** Listras verticais da camisa (azul, preto e branco) no lado direito do cabeçalho. */
+export function JerseyStripes({ style }: { style?: object }) {
+  const unit = ["#000000", "#ffffff", "#0d6db3", "#ffffff"];
+  const widths = [16, 3, 22, 3];
+  const bars = Array.from({ length: 30 }, (_, i) => unit.map((c, j) => <View key={`${i}-${j}`} style={{ width: widths[j], backgroundColor: c }} />)).flat();
+  return <View pointerEvents="none" style={[s.stripes, style]}>{bars}</View>;
+}
+
+/** Faixa listrada (camisa tricolor) embaixo do cabeçalho. */
+export function StripeBand() {
+  return <JerseyStripes style={{ position: "relative", right: 0, width: "100%", height: 16 }} />;
+}
+
+export function Crest({ size = 40 }: { size?: number }) {
+  return <Image source={{ uri: CREST_URL }} style={{ width: size, height: size }} contentFit="contain" accessibilityLabel="Escudo do Grêmio" />;
+}
+
 export function Header({ title, subtitle, right, children }: { title: string; subtitle?: string; right?: ReactNode; children?: ReactNode }) {
   const t = useTheme(); const ins = useSafeAreaInsets();
   return (
-    <View style={{ backgroundColor: t.head, paddingTop: ins.top + 10 }}>
-      <View style={[s.wrap, s.row, { justifyContent: "space-between", paddingBottom: children ? 10 : 14 }]}>
-        <View style={{ flexShrink: 1 }}>
-          <Text style={[s.h1, { color: t.headFg }]}>{title}</Text>
-          {subtitle ? <Text style={{ color: t.headMuted, fontSize: 12, marginTop: 2 }}>{subtitle}</Text> : null}
+    <View style={{ backgroundColor: t.head, overflow: "hidden" }}>
+      <View style={{ paddingTop: ins.top + 10 }}>
+        <View style={[s.wrap, s.row, { justifyContent: "space-between", paddingBottom: children ? 10 : 14 }]}>
+          <View style={[s.row, { flexShrink: 1, gap: 10 }]}>
+            <View style={s.crestBox}><Crest size={34} /></View>
+            <View style={{ flexShrink: 1 }}>
+              <Text style={[s.h1, { color: t.headFg }]}>{title}</Text>
+              {subtitle ? <Text style={{ color: t.headMuted, fontSize: 12, marginTop: 2 }}>{subtitle}</Text> : null}
+            </View>
+          </View>
+          {right}
         </View>
-        {right}
+        {children}
       </View>
-      {children}
+      <StripeBand />
     </View>
   );
 }
@@ -57,8 +80,8 @@ export function Chips<T extends string>({ options, value, onChange }: { options:
         const on = o.id === value;
         return (
           <Pressable key={o.id} onPress={() => onChange(o.id)} accessibilityRole="button" accessibilityState={{ selected: on }}
-            style={[s.chip, { borderColor: on ? "#fff" : "#24384e", backgroundColor: on ? "#fff" : "transparent" }]}>
-            <Text style={{ color: on ? t.head : "#d5dfea", fontSize: 13, fontWeight: on ? "600" : "400" }}>{o.label}</Text>
+            style={[s.chip, { borderColor: on ? "#fff" : "rgba(255,255,255,0.55)", backgroundColor: on ? "#fff" : "rgba(0,0,0,0.25)" }]}>
+            <Text style={{ color: on ? t.head : "#ffffff", fontSize: 13, fontWeight: on ? "600" : "400" }}>{o.label}</Text>
           </Pressable>
         );
       })}
@@ -92,11 +115,11 @@ export function Loading({ error, onRetry }: { error?: string | null; onRetry?: (
 
 export function Button({ label, onPress, ghost, disabled, dark }: { label: string; onPress: () => void; ghost?: boolean; disabled?: boolean; dark?: boolean }) {
   const t = useTheme();
-  const bg = ghost ? "transparent" : t.blue;
-  const fg = ghost ? (dark ? "#fff" : t.fg) : t.blueInk;
+  const bg = ghost ? (dark ? "rgba(0,0,0,0.25)" : "transparent") : dark ? "#000" : t.blue;
+  const fg = ghost ? (dark ? "#fff" : t.fg) : dark ? "#fff" : t.blueInk;
   return (
     <Pressable onPress={onPress} disabled={disabled} accessibilityRole="button"
-      style={({ pressed }) => [s.btn, { backgroundColor: bg, borderColor: ghost ? (dark ? "#2a3c52" : t.line) : bg, opacity: disabled ? 0.45 : pressed ? 0.85 : 1 }]}>
+      style={({ pressed }) => [s.btn, { backgroundColor: bg, borderColor: ghost ? (dark ? "rgba(255,255,255,0.6)" : t.line) : bg, opacity: disabled ? 0.45 : pressed ? 0.85 : 1 }]}>
       <Text style={{ color: fg, fontWeight: "600", fontSize: 15 }}>{label}</Text>
     </Pressable>
   );
@@ -141,7 +164,7 @@ export function LiveCard({ item, src, reminded, onToggle }: { item: Item; src?: 
     <View style={[s.card, { backgroundColor: t.surface, borderColor: now ? t.blue : t.line, padding: 14, gap: 10 }]}>
       <View style={[s.row, { justifyContent: "space-between" }]}>
         <View style={[s.row, { gap: 8 }]}>
-          <Text style={[s.tag, { backgroundColor: now ? t.blue : t.head, color: now ? t.blueInk : t.headFg }]}>{now ? "AO VIVO AGORA" : "AO VIVO EM BREVE"}</Text>
+          <Text style={[s.tag, { backgroundColor: now ? t.blue : "#000", color: now ? t.blueInk : "#fff" }]}>{now ? "AO VIVO AGORA" : "AO VIVO EM BREVE"}</Text>
           <Text style={{ color: t.blue, fontWeight: "600", fontSize: 12 }}>{src?.name}</Text>
         </View>
         {!now && item.live_starts_at ? <Text style={[s.count, { color: t.blue }]}>{until(item.live_starts_at)}</Text> : null}
@@ -171,12 +194,12 @@ export function LiveBanner({ item, src, onPress }: { item: Item; src?: Source; o
         <Text style={[s.h3, { color: t.blueInk }]}>{src?.name} {now ? "está ao vivo" : `entra ao vivo em ${until(item.live_starts_at!)}`}</Text>
         <Text numberOfLines={1} style={{ color: t.blueInk, fontSize: 13 }}>{item.title}</Text>
       </View>
-      <Text style={[s.mini, { backgroundColor: t.head, color: t.headFg }]}>Ver</Text>
+      <Text style={[s.mini, { backgroundColor: "#000", color: "#fff" }]}>Ver</Text>
     </Pressable>
   );
 }
 
-function Crest({ uri }: { uri: string | null }) {
+function TeamCrest({ uri }: { uri: string | null }) {
   return uri ? <Image source={{ uri }} style={{ width: 28, height: 28 }} contentFit="contain" /> : <View style={{ width: 28, height: 28 }} />;
 }
 
@@ -186,9 +209,9 @@ export function MatchCard({ m, highlight }: { m: Match; highlight?: boolean }) {
   return (
     <View style={[s.card, { backgroundColor: t.surface, borderColor: highlight ? t.blue : t.line, padding: 14, gap: 8 }]}>
       <View style={[s.row, { justifyContent: "space-between", gap: 8 }]}>
-        <View style={[s.row, { flex: 1, gap: 8 }]}><Crest uri={m.home_logo} /><Text numberOfLines={1} style={[s.team, { color: t.fg, flexShrink: 1 }]}>{m.home_team}</Text></View>
+        <View style={[s.row, { flex: 1, gap: 8 }]}><TeamCrest uri={m.home_logo} /><Text numberOfLines={1} style={[s.team, { color: t.fg, flexShrink: 1 }]}>{m.home_team}</Text></View>
         <Text style={[s.score, { color: live ? t.blue : t.fg }]}>{done || live ? `${m.home_goals ?? 0} × ${m.away_goals ?? 0}` : "×"}</Text>
-        <View style={[s.row, { flex: 1, gap: 8, justifyContent: "flex-end" }]}><Text numberOfLines={1} style={[s.team, { color: t.fg, flexShrink: 1, textAlign: "right" }]}>{m.away_team}</Text><Crest uri={m.away_logo} /></View>
+        <View style={[s.row, { flex: 1, gap: 8, justifyContent: "flex-end" }]}><Text numberOfLines={1} style={[s.team, { color: t.fg, flexShrink: 1, textAlign: "right" }]}>{m.away_team}</Text><TeamCrest uri={m.away_logo} /></View>
       </View>
       <View style={[s.row, { justifyContent: "space-between", flexWrap: "wrap", gap: 6 }]}>
         <Text style={{ color: t.muted, fontSize: 12 }}>{live ? "Em andamento · " : highlight ? "Próximo jogo · " : ""}{dateTime(m.kickoff_at)}</Text>
@@ -204,15 +227,20 @@ export function StandingsTable({ rows }: { rows: Standing[] }) {
   const cell = (txt: string | number, w: number, bold?: boolean, color?: string) => <Text style={{ width: w, textAlign: "center", color: color ?? t.fg, fontWeight: bold ? "700" : "400", fontVariant: ["tabular-nums"] }}>{txt}</Text>;
   return (
     <View style={[s.card, { backgroundColor: t.surface, borderColor: t.line, paddingVertical: 6 }]}>
-      <View style={[s.row, s.trow]}>{head("#", 26)}<View style={{ flex: 1 }}>{head("Time", 100, true)}</View>{head("P", 34)}{head("J", 28)}{head("V", 28)}{head("SG", 34)}</View>
+      <View style={[s.row, s.trow, { borderLeftWidth: 4, borderLeftColor: "transparent" }]}>{head("#", 26)}<View style={{ flex: 1 }}>{head("Time", 100, true)}</View>{head("P", 34)}{head("J", 28)}{head("V", 28)}{head("SG", 34)}</View>
       {rows.map((r) => (
-        <View key={r.position} style={[s.row, s.trow, r.is_gremio && { backgroundColor: t.chip }, { borderTopColor: t.line, borderTopWidth: StyleSheet.hairlineWidth }]}>
+        <View key={r.position} style={[s.row, s.trow, r.is_gremio && { backgroundColor: t.chip }, { borderTopColor: t.line, borderTopWidth: StyleSheet.hairlineWidth, borderLeftWidth: 4, borderLeftColor: r.position <= 6 ? t.blue : r.position > rows.length - 4 ? t.fg : "transparent" }]}>
           {cell(r.position, 26, true, r.is_gremio ? t.blue : undefined)}
-          <View style={[s.row, { flex: 1, gap: 8, minWidth: 0 }]}><Crest uri={r.crest} />
+          <View style={[s.row, { flex: 1, gap: 8, minWidth: 0 }]}><TeamCrest uri={r.crest} />
             <Text numberOfLines={1} style={{ color: r.is_gremio ? t.blue : t.fg, fontWeight: r.is_gremio ? "700" : "400", flexShrink: 1 }}>{r.team}</Text></View>
           {cell(r.points, 34, true)}{cell(r.played, 28)}{cell(r.won, 28)}{cell(r.goal_diff > 0 ? `+${r.goal_diff}` : r.goal_diff, 34)}
         </View>
       ))}
+      <View style={[s.row, { gap: 14, paddingHorizontal: 12, paddingTop: 10, paddingBottom: 4, flexWrap: "wrap" }]}>
+        <View style={[s.row, { gap: 6 }]}><View style={{ width: 10, height: 10, backgroundColor: t.blue }} /><Text style={{ color: t.muted, fontSize: 11 }}>Libertadores (1º ao 6º)</Text></View>
+        <View style={[s.row, { gap: 6 }]}><View style={{ width: 10, height: 10, backgroundColor: t.fg }} /><Text style={{ color: t.muted, fontSize: 11 }}>Rebaixamento (4 últimos)</Text></View>
+        <Text style={{ color: t.muted, fontSize: 11 }}>P pontos · J jogos · V vitórias · SG saldo</Text>
+      </View>
     </View>
   );
 }
@@ -240,6 +268,8 @@ export const s = StyleSheet.create({
   mini: { fontWeight: "700", fontSize: 13, paddingHorizontal: 10, paddingVertical: 6, borderRadius: 8, overflow: "hidden" },
   team: { fontFamily: DISPLAY, fontSize: 17, fontWeight: "700", textTransform: "uppercase" },
   score: { fontFamily: DISPLAY, fontSize: 24, fontWeight: "800", minWidth: 64, textAlign: "center", fontVariant: ["tabular-nums"] },
+  stripes: { position: "absolute", top: 0, bottom: 0, right: -8, width: "42%", flexDirection: "row", overflow: "hidden" },
+  crestBox: { width: 46, height: 46, borderRadius: 23, backgroundColor: "#fff", alignItems: "center", justifyContent: "center" },
   trow: { paddingHorizontal: 8, paddingVertical: 7 },
 });
 

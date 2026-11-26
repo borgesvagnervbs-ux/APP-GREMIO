@@ -3,7 +3,7 @@ import { router } from "expo-router";
 import { useState } from "react";
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { Button, DISPLAY, Loading, s } from "../components/ui";
+import { Button, Crest, DISPLAY, Loading, s, StripeBand } from "../components/ui";
 import { prefsReady, useSession } from "../lib/session";
 import { useSources } from "../lib/sources";
 import { useTheme } from "../lib/theme";
@@ -44,17 +44,20 @@ export default function Escolher() {
 
   return (
     <View style={{ flex: 1, backgroundColor: t.bg }}>
-      <View style={{ backgroundColor: t.head, paddingTop: ins.top + 18, paddingBottom: 18 }}>
+      <View style={{ backgroundColor: t.head, overflow: "hidden" }}>
+        <View style={{ paddingTop: ins.top + 18, paddingBottom: 18 }}>
         <View style={[s.wrap, { gap: 6 }]}>
           <View style={[s.row, { gap: 6, marginBottom: 8 }]}>
-            <View style={[st.step, { backgroundColor: "#fff" }]} /><View style={[st.step, { backgroundColor: isSites ? "#24384e" : "#fff" }]} />
+            <View style={[st.step, { backgroundColor: "#fff" }]} /><View style={[st.step, { backgroundColor: isSites ? "rgba(0,0,0,0.35)" : "#fff" }]} />
           </View>
-          <Text style={[st.title]}>{isSites ? "Escolha 5 sites" : "Escolha 5 canais"}</Text>
-          <Text style={{ color: "#b9c7d6", fontSize: 14 }}>
+          <View style={[s.row, { gap: 10 }]}><View style={st.crest}><Crest size={30} /></View><Text style={[st.title]}>{isSites ? "Escolha 5 sites" : "Escolha 5 canais"}</Text></View>
+          <Text style={{ color: t.headMuted, fontSize: 14 }}>
             {isSites ? "Os 20 sites que mais falam do Grêmio. Você vai ver as notícias dos 5 que escolher."
               : "Os 20 canais do YouTube mais seguidos sobre o Grêmio. Você vai ver os vídeos e as lives dos 5 que escolher."}
           </Text>
         </View>
+        </View>
+        <StripeBand />
       </View>
 
       {!list.length ? <Loading error={error} onRetry={retry} /> :
@@ -94,6 +97,7 @@ export default function Escolher() {
 }
 
 const st = StyleSheet.create({
+  crest: { width: 42, height: 42, borderRadius: 21, backgroundColor: "#fff", alignItems: "center", justifyContent: "center" },
   step: { flex: 1, height: 4, borderRadius: 2 },
   title: { fontFamily: DISPLAY, color: "#fff", fontSize: 32, fontWeight: "800", textTransform: "uppercase" },
   grid: { flexDirection: "row", flexWrap: "wrap", gap: 8 },

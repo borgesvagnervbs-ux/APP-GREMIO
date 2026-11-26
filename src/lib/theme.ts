@@ -9,9 +9,9 @@ const light = {
   line: "#dce3ec",
   blue: "#0b6fc2",
   blueInk: "#ffffff",
-  head: "#0a1a2c",
+  head: "#0d6db3",
   headFg: "#ffffff",
-  headMuted: "#93a4b8",
+  headMuted: "#e1eefa",
   chip: "#e7eef6",
 };
 const dark: typeof light = {
@@ -22,9 +22,9 @@ const dark: typeof light = {
   line: "#1e2f43",
   blue: "#3a9bea",
   blueInk: "#04121f",
-  head: "#050c15",
+  head: "#0a5d9a",
   headFg: "#ffffff",
-  headMuted: "#93a4b8",
+  headMuted: "#d6e8f8",
   chip: "#16283c",
 };
 export type Theme = typeof light;
@@ -32,6 +32,9 @@ export type Theme = typeof light;
 export function useTheme(): Theme {
   return useColorScheme() === "dark" ? dark : light;
 }
+
+// Escudo do Grêmio (mesma imagem usada na tabela do Brasileirão)
+export const CREST_URL = "https://crests.football-data.org/1767.png";
 
 // Tons usados nas miniaturas sem foto (só azul e preto)
 export const SHADES = ["#0b6fc2", "#0a1a2c", "#1f5f99", "#000000", "#2f7fcf"];

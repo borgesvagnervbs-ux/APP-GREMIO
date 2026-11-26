@@ -1,7 +1,7 @@
 import { router } from "expo-router";
 import { useState } from "react";
 import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
-import { Button, DISPLAY, s } from "../components/ui";
+import { Button, Crest, DISPLAY, s, StripeBand } from "../components/ui";
 import { useSession } from "../lib/session";
 import { supabase } from "../lib/supabase";
 import { useTheme } from "../lib/theme";
@@ -44,37 +44,34 @@ export default function Login() {
   const input = [st.input, { color: "#fff" }];
   return (
     <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : undefined} style={{ flex: 1, backgroundColor: t.head }}>
+      <StripeBand />
       <ScrollView contentContainerStyle={{ flexGrow: 1, justifyContent: "center", paddingVertical: 48 }} keyboardShouldPersistTaps="handled">
         <View style={[s.wrap, { gap: 18 }]}>
-          <View style={[s.row, { gap: 6 }]}>
-            <View style={[st.stripe, { backgroundColor: "#0b6fc2" }]} />
-            <View style={[st.stripe, { backgroundColor: "#000", borderWidth: 1, borderColor: "#2a3a4c" }]} />
-            <View style={[st.stripe, { backgroundColor: "#fff" }]} />
-          </View>
+          <View style={st.crest}><Crest size={64} /></View>
           <Text style={st.brand}>{"Tricolor\nem Dia"}</Text>
-          <Text style={{ color: "#b9c7d6", fontSize: 15, maxWidth: 360 }}>
+          <Text style={{ color: t.headMuted, fontSize: 15, maxWidth: 360 }}>
             Tudo sobre o Grêmio num lugar só: notícias dos sites que você escolher, vídeos dos seus canais favoritos, aviso de lives e a tabela de jogos.
           </Text>
 
           <View style={{ gap: 10 }}>
             <Text style={st.label}>Seu nome</Text>
-            <TextInput nativeID="name" value={name} onChangeText={setName} placeholder="Ex.: Vagner" placeholderTextColor="#6f8297" style={input} autoComplete="given-name" />
+            <TextInput nativeID="name" value={name} onChangeText={setName} placeholder="Ex.: Vagner" placeholderTextColor="#9cc3e4" style={input} autoComplete="given-name" />
             <Text style={st.label}>E-mail</Text>
-            <TextInput nativeID="email" value={email} onChangeText={setEmail} placeholder="voce@email.com" placeholderTextColor="#6f8297" style={input}
+            <TextInput nativeID="email" value={email} onChangeText={setEmail} placeholder="voce@email.com" placeholderTextColor="#9cc3e4" style={input}
               autoCapitalize="none" keyboardType="email-address" autoComplete="email" />
             <Text style={st.label}>Senha</Text>
-            <TextInput nativeID="senha" value={pass} onChangeText={setPass} placeholder="mínimo 6 caracteres" placeholderTextColor="#6f8297" style={input}
+            <TextInput nativeID="senha" value={pass} onChangeText={setPass} placeholder="mínimo 6 caracteres" placeholderTextColor="#9cc3e4" style={input}
               secureTextEntry autoComplete="password" onSubmitEditing={entrar} />
           </View>
 
-          {msg ? <Text accessibilityLiveRegion="polite" style={{ color: msg.ok ? "#9fd0ff" : "#ffffff", backgroundColor: msg.ok ? "#0f2a44" : "#1b2a3b", padding: 12, borderRadius: 10 }}>{msg.text}</Text> : null}
+          {msg ? <Text accessibilityLiveRegion="polite" style={{ color: "#ffffff", backgroundColor: msg.ok ? "#000000" : "rgba(0,0,0,0.55)", padding: 12, borderRadius: 10 }}>{msg.text}</Text> : null}
 
           <View style={{ gap: 10 }}>
-            <Button label={busy ? "Aguarde..." : "Entrar"} onPress={entrar} disabled={busy || !email || !pass} />
+            <Button label={busy ? "Aguarde..." : "Entrar"} dark onPress={entrar} disabled={busy || !email || !pass} />
             <Button label="Criar conta" onPress={criar} ghost dark disabled={busy || !email || pass.length < 6} />
             <Button label="Entrar sem cadastro" onPress={visitante} ghost dark disabled={busy} />
           </View>
-          <Text style={{ color: "#8193a7", fontSize: 12 }}>
+          <Text style={{ color: t.headMuted, fontSize: 12 }}>
             Sem cadastro, suas escolhas ficam salvas só neste aparelho. App de torcedor, sem vínculo oficial com o clube.
           </Text>
         </View>
@@ -84,8 +81,8 @@ export default function Login() {
 }
 
 const st = StyleSheet.create({
-  stripe: { height: 8, width: 44, borderRadius: 2 },
+  crest: { width: 84, height: 84, borderRadius: 42, backgroundColor: "#fff", alignItems: "center", justifyContent: "center" },
   brand: { fontFamily: DISPLAY, color: "#fff", fontSize: 50, lineHeight: 50, fontWeight: "800", textTransform: "uppercase" },
-  label: { color: "#b9c7d6", fontSize: 12, letterSpacing: 1, textTransform: "uppercase" },
-  input: { borderWidth: 1, borderColor: "#2a3c52", backgroundColor: "#0f2235", borderRadius: 10, paddingHorizontal: 14, paddingVertical: 13, fontSize: 16 },
+  label: { color: "#ffffff", fontSize: 12, letterSpacing: 1, textTransform: "uppercase" },
+  input: { borderWidth: 1, borderColor: "rgba(255,255,255,0.45)", backgroundColor: "rgba(0,0,0,0.35)", borderRadius: 10, paddingHorizontal: 14, paddingVertical: 13, fontSize: 16 },
 });

@@ -1,13 +1,12 @@
 import { router } from "expo-router";
 import { Pressable, ScrollView, Text, View } from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { Button, s } from "../components/ui";
+import { Button, Header, s } from "../components/ui";
 import { useSession } from "../lib/session";
 import { useSources } from "../lib/sources";
 import { useTheme } from "../lib/theme";
 
 export default function Conta() {
-  const t = useTheme(); const ins = useSafeAreaInsets();
+  const t = useTheme();
   const { name, mode, session, prefs, signOut } = useSession();
   const { byId } = useSources();
   const names = (ids: string[] = []) => ids.map((id) => byId[id]?.name ?? id).join(", ");
@@ -15,12 +14,7 @@ export default function Conta() {
 
   return (
     <View style={{ flex: 1, backgroundColor: t.bg }}>
-      <View style={{ backgroundColor: t.head, paddingTop: ins.top + 10, paddingBottom: 16 }}>
-        <View style={[s.wrap, s.row, { justifyContent: "space-between" }]}>
-          <Text style={[s.h1, { color: t.headFg }]}>Minha conta</Text>
-          <Pressable onPress={back} accessibilityRole="button" style={{ padding: 6 }}><Text style={{ color: t.headFg, fontSize: 15 }}>Fechar</Text></Pressable>
-        </View>
-      </View>
+      <Header title="Minha conta" right={<Pressable onPress={back} accessibilityRole="button" style={{ paddingVertical: 6, paddingHorizontal: 12, borderRadius: 8, backgroundColor: "#000" }}><Text style={{ color: "#fff", fontSize: 15, fontWeight: "600" }}>Fechar</Text></Pressable>} />
       <ScrollView contentContainerStyle={[s.wrap, { gap: 14, paddingVertical: 18 }]}>
         <View style={[s.card, { backgroundColor: t.surface, borderColor: t.line, padding: 14, gap: 4 }]}>
           <Text style={[s.h3, { color: t.fg }]}>{name}</Text>
