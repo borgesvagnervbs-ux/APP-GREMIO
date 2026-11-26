@@ -71,7 +71,7 @@ export function Header({ title, subtitle, right, children }: { title: string; su
   );
 }
 
-export function Chips<T extends string>({ options, value, onChange, padded = true }: { options: { id: T; label: string; icon?: string | null }[]; value: T; onChange: (v: T) => void; padded?: boolean }) {
+export function Chips<T extends string>({ options, value, onChange, padded = true }: { options: { id: T; label: string; icon?: number | null }[]; value: T; onChange: (v: T) => void; padded?: boolean }) {
   const t = useTheme();
   return (
     <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={[padded ? s.wrapH : null, { gap: 8, paddingBottom: padded ? 4 : 0 }]}>
@@ -80,7 +80,7 @@ export function Chips<T extends string>({ options, value, onChange, padded = tru
         return (
           <Pressable key={o.id} onPress={() => onChange(o.id)} accessibilityRole="button" accessibilityState={{ selected: on }}
             style={[s.chip, s.row, { gap: 6, borderColor: on ? t.blue : t.line, backgroundColor: on ? t.blue : t.surface, paddingVertical: o.icon ? 4 : 7 }]}>
-            {o.icon ? <View style={s.logoBox}><RNImage source={{ uri: o.icon }} style={{ width: 20, height: 20 }} resizeMode="contain" /></View> : null}
+            {o.icon ? <View style={s.logoBox}><RNImage source={o.icon} style={{ width: 20, height: 20 }} resizeMode="contain" /></View> : null}
             <Text style={{ color: on ? t.blueInk : t.fg, fontSize: 13, fontWeight: on ? "700" : "500" }}>{o.label}</Text>
           </Pressable>
         );
@@ -119,8 +119,8 @@ export function MatchFilters({ comps, comp, onComp, where, onWhere }: { comps: s
 }
 
 export function CompLogo({ name, size = 18 }: { name: string; size?: number }) {
-  const uri = compLogo(name);
-  return uri ? <View style={[s.logoBox, { width: size + 4, height: size + 4 }]}><RNImage source={{ uri }} style={{ width: size, height: size }} resizeMode="contain" accessibilityLabel={name} /></View> : null;
+  const logo = compLogo(name);
+  return logo ? <View style={[s.logoBox, { width: size + 4, height: size + 4 }]}><RNImage source={logo} style={{ width: size, height: size }} resizeMode="contain" accessibilityLabel={name} /></View> : null;
 }
 
 export function Section({ title, note }: { title: string; note?: string }) {

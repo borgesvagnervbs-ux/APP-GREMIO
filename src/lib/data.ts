@@ -129,13 +129,13 @@ export function record(list: Match[]) {
 }
 
 // ---------- campeonatos ----------
-/** Logos oficiais (servidor de imagens da ESPN) e ordem de exibição. */
-export const COMPETITIONS: { name: string; short: string; logo: string }[] = [
-  { name: "Brasileirão", short: "Brasileirão", logo: "https://a.espncdn.com/i/leaguelogos/soccer/500/85.png" },
-  { name: "Copa do Brasil", short: "Copa do Brasil", logo: "https://a.espncdn.com/i/leaguelogos/soccer/500/528.png" },
-  { name: "Libertadores", short: "Libertadores", logo: "https://a.espncdn.com/i/leaguelogos/soccer/500/58.png" },
-  { name: "Sul-Americana", short: "Sul-Americana", logo: "https://a.espncdn.com/i/leaguelogos/soccer/500/1208.png" },
-  { name: "Gauchão", short: "Gauchão", logo: "https://a.espncdn.com/i/leaguelogos/soccer/500/2272.png" },
+/** Logos oficiais, guardadas dentro do app (assets/ligas) para aparecerem sempre, mesmo sem acesso ao site de origem. */
+export const COMPETITIONS: { name: string; short: string; logo: number | null }[] = [
+  { name: "Brasileirão", short: "Brasileirão", logo: require("../../assets/ligas/brasileirao.png") },
+  { name: "Copa do Brasil", short: "Copa do Brasil", logo: require("../../assets/ligas/copa-do-brasil.png") },
+  { name: "Libertadores", short: "Libertadores", logo: null },
+  { name: "Sul-Americana", short: "Sul-Americana", logo: require("../../assets/ligas/sul-americana.png") },
+  { name: "Gauchão", short: "Gauchão", logo: require("../../assets/ligas/gauchao.png") },
 ];
 export const compLogo = (name: string) => COMPETITIONS.find((c) => c.name === name)?.logo ?? null;
 /** Campeonatos que aparecem nos jogos do ano, na ordem acima (os desconhecidos vão para o fim). */
