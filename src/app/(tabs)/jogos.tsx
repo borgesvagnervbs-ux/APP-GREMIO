@@ -8,6 +8,7 @@ import { Chips, CompChips, CompLogo, Empty, Header, Loading, MatchCard, s, Secti
 import { competitionsIn, filterMatches, FINISHED, getMatches, getStandings, isGremio, record, ties, viewsFor, type CompView, type Match, type Standing, type Tie, type Where } from "../../lib/data";
 import { useTheme } from "../../lib/theme";
 
+const GROUP_STAGE = /grupos|1ª fase|classificação|^$/i;
 const RESULT_TXT: Record<Tie["result"], string> = { classificado: "Classificado", eliminado: "Eliminado", andamento: "Em andamento", a_disputar: "A disputar" };
 
 export default function Jogos() {
@@ -78,34 +79,47 @@ export default function Jogos() {
         {g ? <Text style={[s.h3, { color: t.fg, marginTop: 6 }]}>{g}</Text> : null}
         <StandingsTable rows={rows.filter((r) => (r.grp ?? "") === g)} zones={comp === "Brasileirão"} />
       </View>) : <Empty>{label} do {comp} indisponível no momento.</Empty>}
+      {comp !== "Brasileirão" ? playoffs() : null}
     </>;
+  };
+
+  const tieCard = (tie: Tie) => {
+    const legs = tie.legs.filter((m) => where === "todos" || isGremio(m.home_team) === (where === "casa"));
+    const color = tie.result === "classificado" ? t.blue : tie.result === "eliminado" ? "#000" : t.muted;
+    return (
+      <View key={tie.round + tie.opponent} style={[s.card, { backgroundColor: t.surface, borderColor: t.line, padding: 12, gap: 8 }]}>
+        <View style={[s.row, { justifyContent: "space-between", gap: 8 }]}>
+          <View style={{ flexShrink: 1 }}>
+            <Text style={[s.h3, { color: t.fg }]}>{tie.round}</Text>
+            <Text style={{ color: t.muted, fontSize: 13 }}>Grêmio × {tie.opponent}{tie.legs.length > 1 ? " · ida e volta" : " · jogo único"}</Text>
+          </View>
+          <View style={{ alignItems: "flex-end" }}>
+            <Text style={[s.tag, { backgroundColor: color, color: "#fff" }]}>{(tie.result === "classificado" && /final$/i.test(tie.round) && !/semi|quartas|oitavas/i.test(tie.round) ? "CAMPEÃO" : RESULT_TXT[tie.result].toUpperCase())}</Text>
+            {tie.legs.length > 1 && tie.result !== "a_disputar" ? <Text style={{ color: t.fg, fontSize: 12, marginTop: 4 }}>Agregado: Grêmio {tie.pro} × {tie.contra}</Text> : null}
+            {tie.pens ? <Text style={{ color: t.fg, fontSize: 12 }}>Pênaltis: {tie.pens}</Text> : null}
+          </View>
+        </View>
+        {legs.length ? legs.map((m) => <MatchCard key={m.id} m={m} onPress={FINISHED.includes(m.status) ? () => router.push(`/jogo/${m.id}`) : undefined} />)
+          : <Text style={{ color: t.muted, fontSize: 12 }}>Nenhum jogo {where === "casa" ? "em casa" : "fora"} neste confronto.</Text>}
+      </View>
+    );
   };
 
   const knockout = () => {
     const list = ties(data.matches.filter((m) => m.competition === comp));
     return <>
       <Section title="Fase e confronto" note={comp} />
-      {list.length ? list.map((tie) => {
-        const legs = tie.legs.filter((m) => where === "todos" || isGremio(m.home_team) === (where === "casa"));
-        const color = tie.result === "classificado" ? t.blue : tie.result === "eliminado" ? "#000" : t.muted;
-        return (
-          <View key={tie.round + tie.opponent} style={[s.card, { backgroundColor: t.surface, borderColor: t.line, padding: 12, gap: 8 }]}>
-            <View style={[s.row, { justifyContent: "space-between", gap: 8 }]}>
-              <View style={{ flexShrink: 1 }}>
-                <Text style={[s.h3, { color: t.fg }]}>{tie.round}</Text>
-                <Text style={{ color: t.muted, fontSize: 13 }}>Grêmio × {tie.opponent}{tie.legs.length > 1 ? " · ida e volta" : " · jogo único"}</Text>
-              </View>
-              <View style={{ alignItems: "flex-end" }}>
-                <Text style={[s.tag, { backgroundColor: color, color: "#fff" }]}>{RESULT_TXT[tie.result].toUpperCase()}</Text>
-                {tie.legs.length > 1 && tie.result !== "a_disputar" ? <Text style={{ color: t.fg, fontSize: 12, marginTop: 4 }}>Agregado: Grêmio {tie.pro} × {tie.contra}</Text> : null}
-              </View>
-            </View>
-            {legs.length ? legs.map((m) => <MatchCard key={m.id} m={m} onPress={FINISHED.includes(m.status) ? () => router.push(`/jogo/${m.id}`) : undefined} />)
-              : <Text style={{ color: t.muted, fontSize: 12 }}>Nenhum jogo {where === "casa" ? "em casa" : "fora"} neste confronto.</Text>}
-          </View>
-        );
-      }) : <Empty>Nenhum confronto encontrado.</Empty>}
+      {list.length ? list.map(tieCard) : <Empty>Nenhum confronto encontrado.</Empty>}
     </>;
+  };
+
+  /** Mata-matas depois da fase de grupos/classificação (Gauchão, Sul-Americana, Libertadores). */
+  const playoffs = () => {
+    const list = ties(data.matches.filter((m) => m.competition === comp && !GROUP_STAGE.test(m.round ?? "")));
+    return list.length ? <>
+      <Section title="Mata-mata" note="depois da fase de grupos" />
+      {list.map(tieCard)}
+    </> : null;
   };
 
   return (

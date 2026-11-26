@@ -137,6 +137,28 @@ export const COMPETITIONS: { name: string; short: string; logo: number | null }[
   { name: "Sul-Americana", short: "Sul-Americana", logo: require("../../assets/ligas/sul-americana.png") },
   { name: "Gauchão", short: "Gauchão", logo: require("../../assets/ligas/gauchao.png") },
 ];
+/** Escudos dos clubes gaúchos guardados no app (os da ESPN vinham errados ou faltando). */
+const CRESTS: Record<string, number> = {
+  "avenida": require("../../assets/times/avenida.png"),
+  "brasil de pelotas": require("../../assets/times/brasil-de-pelotas.png"),
+  "caxias": require("../../assets/times/caxias.png"),
+  "caxias do sul": require("../../assets/times/caxias.png"),
+  "ec pelotas": require("../../assets/times/ec-pelotas.png"),
+  "pelotas": require("../../assets/times/ec-pelotas.png"),
+  "guarany de bagé": require("../../assets/times/guarany.png"),
+  "guarany": require("../../assets/times/guarany.png"),
+  "internacional": require("../../assets/times/internacional.png"),
+  "juventude": require("../../assets/times/juventude.png"),
+  "monsoon": require("../../assets/times/monsoon.png"),
+  "novo hamburgo": require("../../assets/times/novo-hamburgo.png"),
+  "são josé-rs": require("../../assets/times/sao-jose.png"),
+  "são luiz-rs": require("../../assets/times/sao-luiz.png"),
+  "são luiz": require("../../assets/times/sao-luiz.png"),
+  "ypiranga": require("../../assets/times/ypiranga.png"),
+  "ypiranga-rs": require("../../assets/times/ypiranga.png"),
+};
+export const localCrest = (team: string) => CRESTS[team.trim().toLowerCase()] ?? null;
+
 export const compLogo = (name: string) => COMPETITIONS.find((c) => c.name === name)?.logo ?? null;
 /** Campeonatos que aparecem nos jogos do ano, na ordem acima (os desconhecidos vão para o fim). */
 export function competitionsIn(list: Match[]): string[] {
@@ -241,7 +263,7 @@ export function viewsFor(comp: string): { id: CompView; label: string }[] {
 }
 
 /** Confrontos de mata-mata (ida e volta) do Grêmio num campeonato, do mais recente para o mais antigo. */
-export type Tie = { round: string; opponent: string; legs: Match[]; pro: number; contra: number; done: boolean; result: "classificado" | "eliminado" | "andamento" | "a_disputar" };
+export type Tie = { round: string; opponent: string; legs: Match[]; pro: number; contra: number; done: boolean; pens: string | null; result: "classificado" | "eliminado" | "andamento" | "a_disputar" };
 export function ties(list: Match[]): Tie[] {
   const groups = new Map<string, Match[]>();
   for (const m of list) {
@@ -260,7 +282,9 @@ export function ties(list: Match[]): Tie[] {
     let result: Tie["result"] = fin.length === 0 ? "a_disputar" : "andamento";
     if (done && /(advance|win)/i.test(note)) result = /(gr[eê]mio|\bGRE\b) (advance|win)/i.test(note) ? "classificado" : "eliminado";
     else if (done && !/1st Leg/i.test(note)) result = r.gp > r.gc ? "classificado" : r.gp < r.gc ? "eliminado" : "andamento";
-    out.push({ round, opponent, legs, pro: r.gp, contra: r.gc, done, result });
+    const p = note.match(/(gr[eê]mio|\bGRE\b) advance (\d+)-(\d+) on penalties/i) ?? note.match(/advance (\d+)-(\d+) on penalties/i);
+    const pens = p ? (p.length === 4 ? `Grêmio ${p[2]} × ${p[3]}` : `${p[1]} × ${p[2]}`) : null;
+    out.push({ round, opponent, legs, pro: r.gp, contra: r.gc, done, pens, result });
   }
   return out.sort((a, b) => b.legs[0].kickoff_at.localeCompare(a.legs[0].kickoff_at));
 }

@@ -4,7 +4,7 @@ import * as WebBrowser from "expo-web-browser";
 import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import { ActivityIndicator, Image as RNImage, Platform, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { ago, cityPt, dateTime, notePt, duration, compLogo, ytId, FINISHED, LIVE_MATCH, until, views, type Item, type Match, type Source, type Standing, type Where } from "../lib/data";
+import { ago, cityPt, dateTime, notePt, duration, compLogo, localCrest, ytId, FINISHED, LIVE_MATCH, until, views, type Item, type Match, type Source, type Standing, type Where } from "../lib/data";
 import { BRAND, CREST_URL, SHADES, useTheme, type Theme } from "../lib/theme";
 
 export const DISPLAY = Platform.select({ web: "'Barlow Condensed','Arial Narrow',system-ui,sans-serif", default: undefined });
@@ -236,7 +236,9 @@ export function LiveBanner({ item, src, onPress }: { item: Item; src?: Source; o
   );
 }
 
-function TeamCrest({ uri }: { uri: string | null }) {
+function TeamCrest({ uri, team }: { uri: string | null; team?: string }) {
+  const local = team ? localCrest(team) : null;
+  if (local) return <RNImage source={local} style={{ width: 28, height: 28 }} resizeMode="contain" />;
   return uri ? <Image source={{ uri }} style={{ width: 28, height: 28 }} contentFit="contain" /> : <View style={{ width: 28, height: 28 }} />;
 }
 
@@ -251,9 +253,9 @@ export function MatchCard({ m, highlight, onPress }: { m: Match; highlight?: boo
   const body = (
     <>
       <View style={[s.row, { justifyContent: "space-between", gap: 8 }]}>
-        <View style={[s.row, { flex: 1, gap: 8 }]}><TeamCrest uri={m.home_logo} /><Text numberOfLines={1} style={[s.team, { color: t.fg, flexShrink: 1 }]}>{m.home_team}</Text></View>
+        <View style={[s.row, { flex: 1, gap: 8 }]}><TeamCrest uri={m.home_logo} team={m.home_team} /><Text numberOfLines={1} style={[s.team, { color: t.fg, flexShrink: 1 }]}>{m.home_team}</Text></View>
         <Text style={[s.score, { color: live ? t.blue : t.fg }]}>{done || live ? `${m.home_goals ?? 0} × ${m.away_goals ?? 0}` : "×"}</Text>
-        <View style={[s.row, { flex: 1, gap: 8, justifyContent: "flex-end" }]}><Text numberOfLines={1} style={[s.team, { color: t.fg, flexShrink: 1, textAlign: "right" }]}>{m.away_team}</Text><TeamCrest uri={m.away_logo} /></View>
+        <View style={[s.row, { flex: 1, gap: 8, justifyContent: "flex-end" }]}><Text numberOfLines={1} style={[s.team, { color: t.fg, flexShrink: 1, textAlign: "right" }]}>{m.away_team}</Text><TeamCrest uri={m.away_logo} team={m.away_team} /></View>
       </View>
       {m.note ? <Text style={{ color: t.fg, fontSize: 12, textAlign: "center" }}>{notePt(m.note)}</Text> : null}
       <View style={[s.row, { justifyContent: "space-between", flexWrap: "wrap", gap: 6 }]}>
@@ -283,7 +285,7 @@ export function StandingsTable({ rows, zones = true }: { rows: Standing[]; zones
       {rows.map((r) => (
         <View key={r.position} style={[s.row, s.trow, r.is_gremio && { backgroundColor: t.chip }, { borderTopColor: t.line, borderTopWidth: StyleSheet.hairlineWidth, borderLeftWidth: 4, borderLeftColor: !zones ? "transparent" : r.position <= 6 ? t.blue : r.position > rows.length - 4 ? t.fg : "transparent" }]}>
           {cell(r.position, 26, true, r.is_gremio ? t.blue : undefined)}
-          <View style={[s.row, { flex: 1, gap: 8, minWidth: 0 }]}><TeamCrest uri={r.crest} />
+          <View style={[s.row, { flex: 1, gap: 8, minWidth: 0 }]}><TeamCrest uri={r.crest} team={r.team} />
             <Text numberOfLines={1} style={{ color: r.is_gremio ? t.blue : t.fg, fontWeight: r.is_gremio ? "700" : "400", flexShrink: 1 }}>{r.team}</Text></View>
           {cell(r.points, 34, true)}{cell(r.played, 28)}{cell(r.won, 28)}{cell(r.goal_diff > 0 ? `+${r.goal_diff}` : r.goal_diff, 34)}
         </View>
