@@ -65,6 +65,12 @@ export function ytId(item: Item): string | null {
   return item.url.match(/[?&]v=([\w-]{6,})/)?.[1] ?? null;
 }
 
+/** O mais recente de cada fonte (uma notícia por site, um vídeo por canal), do mais novo para o mais antigo. */
+export function latestPerSource(list: Item[]): Item[] {
+  const seen = new Set<string>();
+  return list.filter((i) => (seen.has(i.source_id) ? false : (seen.add(i.source_id), true)));
+}
+
 /** Vídeos do Grêmio vindos só dos canais escolhidos. */
 export async function getVideos(channels: string[], limit = 40): Promise<Item[]> {
   if (!channels.length) return [];

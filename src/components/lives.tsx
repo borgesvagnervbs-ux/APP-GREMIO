@@ -1,13 +1,14 @@
 import { useState } from "react";
 import { Text, View } from "react-native";
-import { AccountButton, Scroll } from "../../components/screen";
-import { Empty, Header, LiveCard, Loading, Section, useLoad } from "../../components/ui";
-import { getLives } from "../../lib/data";
-import { useSession } from "../../lib/session";
-import { useSources } from "../../lib/sources";
-import { useTheme } from "../../lib/theme";
+import { Scroll } from "./screen";
+import { Empty, LiveCard, Loading, Section, useLoad } from "./ui";
+import { getLives } from "../lib/data";
+import { useSession } from "../lib/session";
+import { useSources } from "../lib/sources";
+import { useTheme } from "../lib/theme";
 
-export default function Lives() {
+/** Conteúdo das Lives (fica dentro da aba Vídeos). */
+export function LivesBody() {
   const t = useTheme();
   const { prefs, reminders, toggleReminder, mode } = useSession();
   const { byId } = useSources();
@@ -24,7 +25,6 @@ export default function Lives() {
 
   return (
     <View style={{ flex: 1, backgroundColor: t.bg }}>
-      <Header title="Lives" subtitle="Ao vivo agora e agendadas nos seus canais" right={<AccountButton />} />
       {loading && !data.length ? <Loading /> : error && !data.length ? <Loading error={error} onRetry={reload} /> :
         <Scroll refreshing={refreshing} onRefresh={reload}>
           {err ? <Text style={{ color: t.fg, marginTop: 12 }}>{err}</Text> : null}

@@ -27,8 +27,8 @@ export default function TabsLayout() {
       sceneStyle: { backgroundColor: t.bg },
     }}>
       <Tabs.Screen name="inicio" options={{ title: "Início", tabBarLabel: label("Início"), tabBarIcon: icon("home") }} />
+      <Tabs.Screen name="noticias" options={{ title: "Notícias", tabBarLabel: label("Notícias"), tabBarIcon: icon("newspaper") }} />
       <Tabs.Screen name="videos" options={{ title: "Vídeos", tabBarLabel: label("Vídeos"), tabBarIcon: icon("play-circle") }} />
-      <Tabs.Screen name="lives" options={{ title: "Lives", tabBarLabel: label("Lives"), tabBarIcon: icon("radio") }} />
       <Tabs.Screen name="jogos" options={{ title: "Jogos", tabBarLabel: label("Jogos"), tabBarIcon: icon("football") }} />
     </Tabs>
   );

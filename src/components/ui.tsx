@@ -1,3 +1,4 @@
+import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import { router } from "expo-router";
 import * as WebBrowser from "expo-web-browser";
@@ -86,6 +87,25 @@ export function Chips<T extends string>({ options, value, onChange, padded = tru
         );
       })}
     </ScrollView>
+  );
+}
+
+/** Abas no estilo "nav-tabs": ícone + nome, com sublinhado azul na aba aberta. */
+export function NavTabs<T extends string>({ tabs, value, onChange }: { tabs: { id: T; label: string; icon: keyof typeof Ionicons.glyphMap }[]; value: T; onChange: (v: T) => void }) {
+  const t = useTheme();
+  return (
+    <View style={[s.row, s.wrapH, { borderBottomWidth: 1, borderBottomColor: t.line }]}>
+      {tabs.map((tab) => {
+        const on = tab.id === value;
+        return (
+          <Pressable key={tab.id} onPress={() => onChange(tab.id)} accessibilityRole="tab" accessibilityState={{ selected: on }}
+            style={[s.row, { flex: 1, justifyContent: "center", gap: 6, paddingVertical: 10, borderBottomWidth: 3, borderBottomColor: on ? t.blue : "transparent", marginBottom: -1 }]}>
+            <Ionicons name={tab.icon} size={18} color={on ? t.blue : t.muted} />
+            <Text style={{ color: on ? t.blue : t.muted, fontWeight: on ? "800" : "600", fontSize: 15 }}>{tab.label}</Text>
+          </Pressable>
+        );
+      })}
+    </View>
   );
 }
 
@@ -280,7 +300,7 @@ export function MatchCard({ m, highlight, onPress }: { m: Match; highlight?: boo
     : <View style={style}>{body}</View>;
 }
 
-export function StandingsTable({ rows, zones = true }: { rows: Standing[]; zones?: boolean }) {
+export function StandingsTable({ rows, zones = true, total }: { rows: Standing[]; zones?: boolean; total?: number }) {
   const t = useTheme();
   const head = (txt: string, w: number, left?: boolean) => <Text style={{ width: w, color: t.muted, fontSize: 11, fontWeight: "600", textAlign: left ? "left" : "center" }}>{txt}</Text>;
   const cell = (txt: string | number, w: number, bold?: boolean, color?: string) => <Text style={{ width: w, textAlign: "center", color: color ?? t.fg, fontWeight: bold ? "700" : "400", fontVariant: ["tabular-nums"] }}>{txt}</Text>;
@@ -288,7 +308,7 @@ export function StandingsTable({ rows, zones = true }: { rows: Standing[]; zones
     <View style={[s.card, { backgroundColor: t.surface, borderColor: t.line, paddingVertical: 6 }]}>
       <View style={[s.row, s.trow, { borderLeftWidth: 4, borderLeftColor: "transparent" }]}>{head("#", 26)}<View style={{ flex: 1 }}>{head("Time", 100, true)}</View>{head("P", 34)}{head("J", 28)}{head("V", 28)}{head("SG", 34)}</View>
       {rows.map((r) => (
-        <View key={r.position} style={[s.row, s.trow, r.is_gremio && { backgroundColor: t.chip }, { borderTopColor: t.line, borderTopWidth: StyleSheet.hairlineWidth, borderLeftWidth: 4, borderLeftColor: !zones ? "transparent" : r.position <= 6 ? t.blue : r.position > rows.length - 4 ? t.fg : "transparent" }]}>
+        <View key={r.position} style={[s.row, s.trow, r.is_gremio && { backgroundColor: t.chip }, { borderTopColor: t.line, borderTopWidth: StyleSheet.hairlineWidth, borderLeftWidth: 4, borderLeftColor: !zones ? "transparent" : r.position <= 6 ? t.blue : r.position > (total ?? rows.length) - 4 ? t.fg : "transparent" }]}>
           {cell(r.position, 26, true, r.is_gremio ? t.blue : undefined)}
           <View style={[s.row, { flex: 1, gap: 8, minWidth: 0 }]}><TeamCrest uri={r.crest} team={r.team} />
             <Text numberOfLines={1} style={{ color: r.is_gremio ? t.blue : t.fg, fontWeight: r.is_gremio ? "700" : "400", flexShrink: 1 }}>{r.team}</Text></View>
