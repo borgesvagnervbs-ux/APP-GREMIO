@@ -12,8 +12,8 @@ export default function Jogo() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { data: m, loading, error, reload } = useLoad<Match | null>(() => getMatch(Number(id)), [id], null);
   const back = () => (router.canGoBack() ? router.back() : router.replace("/jogos"));
-  const close = <Pressable onPress={back} accessibilityRole="button" style={{ paddingVertical: 6, paddingHorizontal: 12, borderRadius: 8, backgroundColor: "#000" }}>
-    <Text style={{ color: "#fff", fontSize: 15, fontWeight: "600" }}>Voltar</Text></Pressable>;
+  const close = <Pressable onPress={back} accessibilityRole="button" style={{ paddingVertical: 6, paddingHorizontal: 12, borderRadius: 8, backgroundColor: "#fff" }}>
+    <Text style={{ color: "#000", fontSize: 15, fontWeight: "600" }}>Voltar</Text></Pressable>;
 
   if (!m) return <View style={{ flex: 1, backgroundColor: t.bg }}><Header title="Resumo do jogo" right={close} />
     {loading ? <Loading /> : <Loading error={error ?? "Jogo não encontrado"} onRetry={reload} />}</View>;

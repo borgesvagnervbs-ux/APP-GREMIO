@@ -28,6 +28,7 @@ export default function RootLayout() {
           <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: t.bg } }}>
             <Stack.Screen name="conta" options={{ presentation: "modal" }} />
             <Stack.Screen name="jogo/[id]" />
+            <Stack.Screen name="estatisticas" />
           </Stack>
         </SourcesProvider>
       </SessionProvider>

@@ -3,10 +3,10 @@ import { router } from "expo-router";
 import { useState } from "react";
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { Button, Crest, DISPLAY, Loading, s } from "../components/ui";
+import { Button, DISPLAY, Header, Loading, s } from "../components/ui";
 import { prefsReady, useSession } from "../lib/session";
 import { useSources } from "../lib/sources";
-import { BRAND, useTheme } from "../lib/theme";
+import { useTheme } from "../lib/theme";
 
 const MAX = 5;
 
@@ -44,23 +44,14 @@ export default function Escolher() {
 
   return (
     <View style={{ flex: 1, backgroundColor: t.bg }}>
-      <View>
-        <View style={{ backgroundColor: BRAND.blue, paddingTop: ins.top + 18, paddingBottom: 14 }}>
-          <View style={[s.wrap, { gap: 8 }]}>
-            <View style={[s.row, { gap: 6 }]}>
-              <View style={[st.step, { backgroundColor: "#fff" }]} /><View style={[st.step, { backgroundColor: isSites ? "rgba(0,0,0,0.35)" : "#fff" }]} />
-            </View>
-            <View style={[s.row, { gap: 10 }]}><View style={st.crest}><Crest size={30} /></View><Text style={[st.title]}>{isSites ? "Escolha 5 sites" : "Escolha 5 canais"}</Text></View>
+      <Header title={isSites ? "Escolha 5 sites" : "Escolha 5 canais"}
+        subtitle={isSites ? "Você vai ver as notícias dos 5 sites que escolher" : "Você vai ver os vídeos e lives dos 5 canais que escolher"}
+        right={<View style={{ alignItems: "center", gap: 6 }}>
+          <View style={[s.row, { gap: 6 }]}>
+            <View style={[st.step, { backgroundColor: "#fff" }]} /><View style={[st.step, { backgroundColor: isSites ? "rgba(255,255,255,0.3)" : "#fff" }]} />
           </View>
-        </View>
-        <View style={{ backgroundColor: BRAND.white, paddingVertical: 10 }}>
-          <Text style={[s.wrap, { color: "#0d1622", fontSize: 14 }]}>
-            {isSites ? "Os 20 sites que mais falam do Grêmio. Você vai ver as notícias dos 5 que escolher."
-              : "Os 20 canais do YouTube mais seguidos sobre o Grêmio. Você vai ver os vídeos e as lives dos 5 que escolher."}
-          </Text>
-        </View>
-        <View style={{ backgroundColor: BRAND.black, height: 14 }} />
-      </View>
+          <Text style={{ color: "#fff", fontSize: 12, fontWeight: "600" }}>Passo {isSites ? 1 : 2} de 2</Text>
+        </View>} />
 
       {!list.length ? <Loading error={error} onRetry={retry} /> :
         <ScrollView contentContainerStyle={{ paddingVertical: 16, paddingBottom: 110 }}>
@@ -99,9 +90,7 @@ export default function Escolher() {
 }
 
 const st = StyleSheet.create({
-  crest: { width: 42, height: 42, borderRadius: 21, backgroundColor: "#fff", alignItems: "center", justifyContent: "center" },
-  step: { flex: 1, height: 4, borderRadius: 2 },
-  title: { fontFamily: DISPLAY, color: "#fff", fontSize: 32, fontWeight: "800", textTransform: "uppercase" },
+  step: { width: 22, height: 4, borderRadius: 2 },
   grid: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
   pick: { flexBasis: "48%", flexGrow: 1, flexDirection: "row", alignItems: "center", gap: 10, padding: 10, borderRadius: 12, borderWidth: 1.5 },
   rank: { fontFamily: DISPLAY, fontWeight: "700", fontSize: 16, width: 26 },

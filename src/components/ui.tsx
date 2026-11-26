@@ -3,7 +3,7 @@ import * as WebBrowser from "expo-web-browser";
 import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import { ActivityIndicator, Platform, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { ago, cityPt, dateTime, notePt, duration, FINISHED, LIVE_MATCH, until, views, type Item, type Match, type Source, type Standing } from "../lib/data";
+import { ago, cityPt, dateTime, notePt, duration, compLogo, FINISHED, LIVE_MATCH, until, views, type Item, type Match, type Source, type Standing, type Where } from "../lib/data";
 import { BRAND, CREST_URL, SHADES, useTheme, type Theme } from "../lib/theme";
 
 export const DISPLAY = Platform.select({ web: "'Barlow Condensed','Arial Narrow',system-ui,sans-serif", default: undefined });
@@ -42,43 +42,71 @@ export function Crest({ size = 40 }: { size?: number }) {
   return <Image source={{ uri: CREST_URL }} style={{ width: size, height: size }} contentFit="contain" accessibilityLabel="Escudo do Grêmio" />;
 }
 
-/** Cabeçalho em três faixas, nesta ordem: azul (escudo e título), branco (descrição) e preto (abas). */
+/** Cabeçalho em três colunas verticais, nesta ordem: azul (escudo e título), branco (descrição) e preto (botão da conta).
+ *  O que vier em `children` (abas) fica logo abaixo, no fundo claro. */
 export function Header({ title, subtitle, right, children }: { title: string; subtitle?: string; right?: ReactNode; children?: ReactNode }) {
   const t = useTheme(); const ins = useSafeAreaInsets();
   return (
     <View>
-      <View style={{ backgroundColor: BRAND.blue, paddingTop: ins.top + 10, paddingBottom: 12 }}>
-        <View style={[s.wrap, s.row, { justifyContent: "space-between" }]}>
-          <View style={[s.row, { flexShrink: 1, gap: 10 }]}>
-            <View style={s.crestBox}><Crest size={34} /></View>
-            <Text style={[s.h1, { color: "#fff", flexShrink: 1 }]} numberOfLines={1}>{title}</Text>
-          </View>
-          {right}
+      <View style={[s.row, { alignItems: "stretch", minHeight: ins.top + 96 }]}>
+        <View style={[s.col, { backgroundColor: BRAND.blue, paddingTop: ins.top + 10 }]}>
+          <View style={[s.crestBox, { width: 40, height: 40, borderRadius: 20 }]}><Crest size={30} /></View>
+          <Text style={[s.h3, { color: "#fff", textAlign: "center", fontSize: 16, lineHeight: 18 }]} numberOfLines={2}>{title}</Text>
         </View>
+        <View style={[s.col, { backgroundColor: BRAND.white, paddingTop: ins.top + 10 }]}>
+          {subtitle ? <Text style={{ color: "#0d1622", fontSize: 12, lineHeight: 15, fontWeight: "600", textAlign: "center" }} numberOfLines={4}>{subtitle}</Text> : null}
+        </View>
+        <View style={[s.col, { backgroundColor: BRAND.black, paddingTop: ins.top + 10 }]}>{right}</View>
       </View>
-      <View style={{ backgroundColor: BRAND.white, paddingVertical: 8, minHeight: 12 }}>
-        {subtitle ? <Text style={[s.wrap, { color: "#0d1622", fontSize: 13, fontWeight: "500" }]}>{subtitle}</Text> : null}
-      </View>
-      <View style={{ backgroundColor: BRAND.black, paddingTop: children ? 10 : 0, minHeight: 18 }}>{children}</View>
       <View style={{ height: 1, backgroundColor: t.line }} />
+      {children ? <View style={{ backgroundColor: t.bg, paddingTop: 12 }}>{children}</View> : null}
     </View>
   );
 }
 
-export function Chips<T extends string>({ options, value, onChange }: { options: { id: T; label: string }[]; value: T; onChange: (v: T) => void }) {
+export function Chips<T extends string>({ options, value, onChange, padded = true }: { options: { id: T; label: string; icon?: string | null }[]; value: T; onChange: (v: T) => void; padded?: boolean }) {
+  const t = useTheme();
   return (
-    <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={[s.wrapH, { gap: 8, paddingBottom: 12 }]}>
+    <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={[padded ? s.wrapH : null, { gap: 8, paddingBottom: padded ? 4 : 0 }]}>
       {options.map((o) => {
         const on = o.id === value;
         return (
           <Pressable key={o.id} onPress={() => onChange(o.id)} accessibilityRole="button" accessibilityState={{ selected: on }}
-            style={[s.chip, { borderColor: on ? BRAND.blue : "rgba(255,255,255,0.5)", backgroundColor: on ? BRAND.blue : "transparent" }]}>
-            <Text style={{ color: "#ffffff", fontSize: 13, fontWeight: on ? "600" : "400" }}>{o.label}</Text>
+            style={[s.chip, s.row, { gap: 6, borderColor: on ? t.blue : t.line, backgroundColor: on ? t.blue : t.surface, paddingVertical: o.icon ? 4 : 7 }]}>
+            {o.icon ? <View style={s.logoBox}><Image source={{ uri: o.icon }} style={{ width: 20, height: 20 }} contentFit="contain" /></View> : null}
+            <Text style={{ color: on ? t.blueInk : t.fg, fontSize: 13, fontWeight: on ? "700" : "500" }}>{o.label}</Text>
           </Pressable>
         );
       })}
     </ScrollView>
   );
+}
+
+/** Filtros dos jogos: campeonato (com logo) + todos/casa/fora. Os dois valem juntos. */
+export function MatchFilters({ comps, comp, onComp, where, onWhere }: { comps: string[]; comp: string; onComp: (c: string) => void; where: Where; onWhere: (w: Where) => void }) {
+  const t = useTheme();
+  return (
+    <View style={{ gap: 8 }}>
+      <Chips<string> padded={false} value={comp} onChange={onComp}
+        options={[{ id: "todos", label: "Todos os campeonatos" }, ...comps.map((c) => ({ id: c, label: c, icon: compLogo(c) }))]} />
+      <View style={[s.row, { gap: 8 }]}>
+        {(["todos", "casa", "fora"] as Where[]).map((w) => {
+          const on = w === where;
+          return (
+            <Pressable key={w} onPress={() => onWhere(w)} accessibilityRole="button" accessibilityState={{ selected: on }}
+              style={[s.chip, { flex: 1, alignItems: "center", paddingVertical: 9, borderColor: on ? "#000" : t.line, backgroundColor: on ? "#000" : t.surface }]}>
+              <Text style={{ color: on ? "#fff" : t.fg, fontWeight: "700" }}>{w === "todos" ? "Casa e fora" : w === "casa" ? "Em casa" : "Fora"}</Text>
+            </Pressable>
+          );
+        })}
+      </View>
+    </View>
+  );
+}
+
+export function CompLogo({ name, size = 18 }: { name: string; size?: number }) {
+  const uri = compLogo(name);
+  return uri ? <View style={[s.logoBox, { width: size + 4, height: size + 4 }]}><Image source={{ uri }} style={{ width: size, height: size }} contentFit="contain" accessibilityLabel={name} /></View> : null;
 }
 
 export function Section({ title, note }: { title: string; note?: string }) {
@@ -213,7 +241,7 @@ export function MatchCard({ m, highlight, onPress }: { m: Match; highlight?: boo
       {m.note ? <Text style={{ color: t.fg, fontSize: 12, textAlign: "center" }}>{notePt(m.note)}</Text> : null}
       <View style={[s.row, { justifyContent: "space-between", flexWrap: "wrap", gap: 6 }]}>
         <Text style={{ color: t.muted, fontSize: 12 }}>{live ? "Em andamento · " : highlight ? "Próximo jogo · " : ""}{dateTime(m.kickoff_at)}</Text>
-        <Text style={{ color: t.muted, fontSize: 12 }}>{m.competition}{m.round ? ` · ${m.round}` : ""}</Text>
+        <View style={[s.row, { gap: 5, flexShrink: 1 }]}><CompLogo name={m.competition} size={14} /><Text style={{ color: t.muted, fontSize: 12, flexShrink: 1 }}>{m.competition}{m.round ? ` · ${m.round}` : ""}</Text></View>
       </View>
       <View style={[s.row, { gap: 6, justifyContent: "space-between" }]}>
         <Text numberOfLines={2} style={{ color: t.fg, fontSize: 12, flexShrink: 1 }}>📍 {place ?? "Local a confirmar"}</Text>
@@ -276,6 +304,8 @@ export const s = StyleSheet.create({
   team: { fontFamily: DISPLAY, fontSize: 17, fontWeight: "700", textTransform: "uppercase" },
   score: { fontFamily: DISPLAY, fontSize: 24, fontWeight: "800", minWidth: 64, textAlign: "center", fontVariant: ["tabular-nums"] },
   crestBox: { width: 46, height: 46, borderRadius: 23, backgroundColor: "#fff", alignItems: "center", justifyContent: "center" },
+  col: { flex: 1, alignItems: "center", justifyContent: "center", gap: 6, paddingHorizontal: 8, paddingBottom: 10 },
+  logoBox: { width: 24, height: 24, borderRadius: 5, backgroundColor: "#fff", alignItems: "center", justifyContent: "center" },
   trow: { paddingHorizontal: 8, paddingVertical: 7 },
 });
 

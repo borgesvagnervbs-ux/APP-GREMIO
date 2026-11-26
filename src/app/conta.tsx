@@ -14,7 +14,7 @@ export default function Conta() {
 
   return (
     <View style={{ flex: 1, backgroundColor: t.bg }}>
-      <Header title="Minha conta" right={<Pressable onPress={back} accessibilityRole="button" style={{ paddingVertical: 6, paddingHorizontal: 12, borderRadius: 8, backgroundColor: "#000" }}><Text style={{ color: "#fff", fontSize: 15, fontWeight: "600" }}>Fechar</Text></Pressable>} />
+      <Header title="Minha conta" right={<Pressable onPress={back} accessibilityRole="button" style={{ paddingVertical: 6, paddingHorizontal: 12, borderRadius: 8, backgroundColor: "#fff" }}><Text style={{ color: "#000", fontSize: 15, fontWeight: "600" }}>Fechar</Text></Pressable>} />
       <ScrollView contentContainerStyle={[s.wrap, { gap: 14, paddingVertical: 18 }]}>
         <View style={[s.card, { backgroundColor: t.surface, borderColor: t.line, padding: 14, gap: 4 }]}>
           <Text style={[s.h3, { color: t.fg }]}>{name}</Text>
