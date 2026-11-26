@@ -39,7 +39,7 @@
     ],
     "scheme": "tricoloremdia",
     "experiments": {
-      "baseUrl": "/app-gremio",
+      "baseUrl": "/APP-GREMIO",
       "typedRoutes": false
     }
   }
