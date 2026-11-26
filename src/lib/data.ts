@@ -210,8 +210,13 @@ export function num(n: number | null, dec = 1): string {
 }
 
 export async function getStandings(): Promise<Standing[]> {
-  const rows: Standing[] = check(await supabase.from("standings").select("*").order("position"));
-  return rows.map((r) => ({ ...r, competition: r.competition ?? "Brasileirão", grp: r.grp ?? "" }));
+  // Brasileirão vem de "standings"; Gauchão, Libertadores e Sul-Americana (com grupos) de "standings_groups"
+  const [bra, groups] = await Promise.all([
+    supabase.from("standings").select("*").order("position"),
+    supabase.from("standings_groups").select("*").order("position"),
+  ]);
+  const rows: Standing[] = check(bra);
+  return [...rows.map((r) => ({ ...r, competition: "Brasileirão", grp: "" })), ...(groups.error ? [] : (groups.data as Standing[]))];
 }
 
 /** Como o Grêmio aparece em cada campeonato: tabela (pontos corridos), classificação (grupos) ou mata-mata. */
