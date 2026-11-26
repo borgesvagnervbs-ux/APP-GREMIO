@@ -29,6 +29,7 @@ export default function RootLayout() {
             <Stack.Screen name="conta" options={{ presentation: "modal" }} />
             <Stack.Screen name="jogo/[id]" />
             <Stack.Screen name="estatisticas" />
+            <Stack.Screen name="video/[id]" />
           </Stack>
         </SourcesProvider>
       </SessionProvider>

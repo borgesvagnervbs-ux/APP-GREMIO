@@ -58,6 +58,17 @@ export async function getAnyVideos(exclude: string[], limit = 6): Promise<Item[]
   return check(await q.order("published_at", { ascending: false }).limit(limit));
 }
 
+export async function getItem(id: string): Promise<Item | null> {
+  const r = await supabase.from("items").select("*").eq("id", id).maybeSingle();
+  if (r.error) throw new Error(r.error.message);
+  return r.data as Item | null;
+}
+/** Id do vídeo no YouTube a partir do item (id "v_XXXX" ou link watch?v=). */
+export function ytId(item: Item): string | null {
+  if (item.id.startsWith("v_")) return item.id.slice(2);
+  return item.url.match(/[?&]v=([\w-]{6,})/)?.[1] ?? null;
+}
+
 export async function getVideos(channels: string[], limit = 40): Promise<Item[]> {
   if (!channels.length) return [];
   return check(await supabase.from("items").select("*").eq("kind", "video")

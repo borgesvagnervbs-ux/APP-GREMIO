@@ -28,7 +28,7 @@ export default function Conta() {
         </View>
         <Button label="Trocar sites e canais" onPress={() => router.push("/escolher")} />
         <Button label="Sair" ghost onPress={async () => { await signOut(); router.replace("/login"); }} />
-        <Text style={{ color: t.muted, fontSize: 12 }}>App de torcedor, sem vínculo oficial com o Grêmio. Notícias e vídeos abrem no site ou no YouTube de quem publicou.</Text>
+        <Text style={{ color: t.muted, fontSize: 12 }}>App de torcedor, sem vínculo oficial com o Grêmio. Notícias abrem no site de quem publicou; vídeos tocam aqui no app pelo player oficial do YouTube.</Text>
       </ScrollView>
     </View>
   );

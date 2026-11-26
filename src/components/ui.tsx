@@ -1,9 +1,10 @@
 import { Image } from "expo-image";
+import { router } from "expo-router";
 import * as WebBrowser from "expo-web-browser";
 import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
-import { ActivityIndicator, Platform, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { ActivityIndicator, Image as RNImage, Platform, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { ago, cityPt, dateTime, notePt, duration, compLogo, FINISHED, LIVE_MATCH, until, views, type Item, type Match, type Source, type Standing, type Where } from "../lib/data";
+import { ago, cityPt, dateTime, notePt, duration, compLogo, ytId, FINISHED, LIVE_MATCH, until, views, type Item, type Match, type Source, type Standing, type Where } from "../lib/data";
 import { BRAND, CREST_URL, SHADES, useTheme, type Theme } from "../lib/theme";
 
 export const DISPLAY = Platform.select({ web: "'Barlow Condensed','Arial Narrow',system-ui,sans-serif", default: undefined });
@@ -12,6 +13,12 @@ export function openLink(url: string) {
   if (!/^https:\/\//.test(url)) return;
   if (Platform.OS === "web") window.open(url, "_blank", "noopener");
   else WebBrowser.openBrowserAsync(url);
+}
+
+/** Vídeos e lives tocam dentro do app; notícias abrem no site. */
+export function openItem(item: Item) {
+  const id = item.kind !== "noticia" ? ytId(item) : null;
+  if (id) router.push(`/video/${id}`); else openLink(item.url);
 }
 
 /** Carrega dados, recarrega ao puxar a tela e sozinho a cada 5 minutos. */
@@ -73,7 +80,7 @@ export function Chips<T extends string>({ options, value, onChange, padded = tru
         return (
           <Pressable key={o.id} onPress={() => onChange(o.id)} accessibilityRole="button" accessibilityState={{ selected: on }}
             style={[s.chip, s.row, { gap: 6, borderColor: on ? t.blue : t.line, backgroundColor: on ? t.blue : t.surface, paddingVertical: o.icon ? 4 : 7 }]}>
-            {o.icon ? <View style={s.logoBox}><Image source={{ uri: o.icon }} style={{ width: 20, height: 20 }} contentFit="contain" /></View> : null}
+            {o.icon ? <View style={s.logoBox}><RNImage source={{ uri: o.icon }} style={{ width: 20, height: 20 }} resizeMode="contain" /></View> : null}
             <Text style={{ color: on ? t.blueInk : t.fg, fontSize: 13, fontWeight: on ? "700" : "500" }}>{o.label}</Text>
           </Pressable>
         );
@@ -113,7 +120,7 @@ export function MatchFilters({ comps, comp, onComp, where, onWhere }: { comps: s
 
 export function CompLogo({ name, size = 18 }: { name: string; size?: number }) {
   const uri = compLogo(name);
-  return uri ? <View style={[s.logoBox, { width: size + 4, height: size + 4 }]}><Image source={{ uri }} style={{ width: size, height: size }} contentFit="contain" accessibilityLabel={name} /></View> : null;
+  return uri ? <View style={[s.logoBox, { width: size + 4, height: size + 4 }]}><RNImage source={{ uri }} style={{ width: size, height: size }} resizeMode="contain" accessibilityLabel={name} /></View> : null;
 }
 
 export function Section({ title, note }: { title: string; note?: string }) {
@@ -169,7 +176,7 @@ export function ItemCard({ item, src }: { item: Item; src?: Source }) {
   const t = useTheme();
   const isVideo = item.kind !== "noticia";
   return (
-    <Pressable onPress={() => openLink(item.url)} accessibilityRole="link"
+    <Pressable onPress={() => openItem(item)} accessibilityRole="link"
       style={({ pressed }) => [s.card, s.item, { backgroundColor: t.surface, borderColor: t.line, opacity: pressed ? 0.85 : 1 }]}>
       <View style={{ width: isVideo ? 128 : 92 }}><Thumb item={item} src={src} wide={isVideo} /></View>
       <View style={{ flex: 1, minWidth: 0 }}>
@@ -188,7 +195,8 @@ export function LiveCard({ item, src, reminded, onToggle }: { item: Item; src?: 
   const t = useTheme();
   const now = item.live_status === "live";
   return (
-    <View style={[s.card, { backgroundColor: t.surface, borderColor: now ? t.blue : t.line, padding: 14, gap: 10 }]}>
+    <Pressable onPress={() => openItem(item)} accessibilityRole="button" accessibilityLabel={`Assistir: ${item.title}`}
+      style={({ pressed }) => [s.card, { backgroundColor: t.surface, borderColor: now ? t.blue : t.line, padding: 14, gap: 10, opacity: pressed ? 0.85 : 1 }]}>
       <View style={[s.row, { justifyContent: "space-between" }]}>
         <View style={[s.row, { gap: 8 }]}>
           <Text style={[s.tag, { backgroundColor: now ? t.blue : "#000", color: now ? t.blueInk : "#fff" }]}>{now ? "AO VIVO AGORA" : "AO VIVO EM BREVE"}</Text>
@@ -196,18 +204,20 @@ export function LiveCard({ item, src, reminded, onToggle }: { item: Item; src?: 
         </View>
         {!now && item.live_starts_at ? <Text style={[s.count, { color: t.blue }]}>{until(item.live_starts_at)}</Text> : null}
       </View>
-      <Pressable onPress={() => openLink(item.url)}>
-        <Text style={{ color: t.fg, fontWeight: "600", fontSize: 16 }}>{item.title}</Text>
-        {item.live_starts_at && !now ? <Text style={{ color: t.muted, fontSize: 12, marginTop: 4 }}>{dateTime(item.live_starts_at)}</Text> : null}
-      </Pressable>
-      <View style={[s.row, { justifyContent: "space-between" }]}>
-        <Pressable onPress={() => openLink(item.url)}><Text style={{ color: t.fg, textDecorationLine: "underline" }}>{now ? "Assistir no YouTube" : "Abrir no YouTube"}</Text></Pressable>
-        {!now ? <Pressable onPress={onToggle} accessibilityRole="switch" accessibilityState={{ checked: reminded }}
+      <View style={[s.row, { gap: 12 }]}>
+        {item.image_url ? <View style={{ width: 112 }}><Thumb item={item} src={src} wide /></View> : null}
+        <View style={{ flex: 1 }}>
+          <Text style={{ color: t.fg, fontWeight: "600", fontSize: 16 }}>{item.title}</Text>
+          {item.live_starts_at && !now ? <Text style={{ color: t.muted, fontSize: 12, marginTop: 4 }}>{dateTime(item.live_starts_at)}</Text> : null}
+        </View>
+      </View>
+      {!now ? <View style={[s.row, { justifyContent: "flex-end" }]}>
+        <Pressable onPress={onToggle} accessibilityRole="switch" accessibilityState={{ checked: reminded }}
           style={[s.toggle, { backgroundColor: reminded ? t.blue : t.chip, borderColor: reminded ? t.blue : t.line }]}>
           <Text style={{ color: reminded ? t.blueInk : t.fg, fontWeight: "600", fontSize: 13 }}>{reminded ? "✓ Lembrete salvo" : "Me avise"}</Text>
-        </Pressable> : null}
-      </View>
-    </View>
+        </Pressable>
+      </View> : null}
+    </Pressable>
   );
 }
 
