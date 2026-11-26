@@ -75,11 +75,13 @@ export default function Jogos() {
         </View>
       </View> : null}
       {where !== "todos" ? summary() : null}
+      {/* primeiro a fase mais longe que o Grêmio chegou (final, semi, quartas...), depois os grupos, com o do Grêmio primeiro */}
+      {comp !== "Brasileirão" ? playoffs() : null}
+      {comp !== "Brasileirão" && rows.length ? <Section title={comp === "Gauchão" ? "Fase de classificação" : "Fase de grupos"} note={me?.grp ? `grupo do Grêmio primeiro` : undefined} /> : null}
       {rows.length ? groups.map((g) => <View key={g} style={{ gap: 6 }}>
         {g ? <Text style={[s.h3, { color: t.fg, marginTop: 6 }]}>{g}</Text> : null}
         <StandingsTable rows={rows.filter((r) => (r.grp ?? "") === g)} zones={comp === "Brasileirão"} />
       </View>) : <Empty>{label} do {comp} indisponível no momento.</Empty>}
-      {comp !== "Brasileirão" ? playoffs() : null}
     </>;
   };
 
@@ -117,7 +119,7 @@ export default function Jogos() {
   const playoffs = () => {
     const list = ties(data.matches.filter((m) => m.competition === comp && !GROUP_STAGE.test(m.round ?? "")));
     return list.length ? <>
-      <Section title="Mata-mata" note="depois da fase de grupos" />
+      <Section title="Mata-mata" note="da fase mais recente para a primeira" />
       {list.map(tieCard)}
     </> : null;
   };

@@ -4,7 +4,7 @@ import * as WebBrowser from "expo-web-browser";
 import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import { ActivityIndicator, Image as RNImage, Platform, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { ago, cityPt, dateTime, notePt, duration, compLogo, localCrest, ytId, FINISHED, LIVE_MATCH, until, views, type Item, type Match, type Source, type Standing, type Where } from "../lib/data";
+import { ago, cityPt, dateTime, notePt, duration, compLogo, localCrest, sourceIcon, ytId, FINISHED, LIVE_MATCH, until, views, type Item, type Match, type Source, type Standing, type Where } from "../lib/data";
 import { BRAND, CREST_URL, SHADES, useTheme, type Theme } from "../lib/theme";
 
 export const DISPLAY = Platform.select({ web: "'Barlow Condensed','Arial Narrow',system-ui,sans-serif", default: undefined });
@@ -165,7 +165,10 @@ function Thumb({ item, src, wide }: { item: Item; src?: Source; wide?: boolean }
   return (
     <View style={[s.thumb, { aspectRatio: wide ? 16 / 11 : 1, backgroundColor: shade }]}>
       {item.image_url ? <Image source={{ uri: item.image_url }} style={StyleSheet.absoluteFill} contentFit="cover" transition={150} /> :
-        <Text numberOfLines={2} style={s.thumbLabel}>{src?.name ?? ""}</Text>}
+        src && sourceIcon(src.id) ? <View style={{ alignItems: "center", gap: 6 }}>
+          <View style={{ backgroundColor: "#fff", borderRadius: 10, padding: 6 }}><RNImage source={sourceIcon(src.id)!} style={{ width: 40, height: 40 }} resizeMode="contain" /></View>
+          <Text numberOfLines={1} style={[s.thumbLabel, { fontSize: 11 }]}>{src.name}</Text>
+        </View> : <Text numberOfLines={2} style={s.thumbLabel}>{src?.name ?? ""}</Text>}
       {wide && item.kind === "video" ? <View style={s.play}><View style={s.playTri} /></View> : null}
       {item.duration_s ? <Text style={s.dur}>{duration(item.duration_s)}</Text> : null}
     </View>
@@ -181,6 +184,7 @@ export function ItemCard({ item, src }: { item: Item; src?: Source }) {
       <View style={{ width: isVideo ? 128 : 92 }}><Thumb item={item} src={src} wide={isVideo} /></View>
       <View style={{ flex: 1, minWidth: 0 }}>
         <View style={[s.row, { gap: 6, flexWrap: "wrap" }]}>
+          {sourceIcon(item.source_id) ? <RNImage source={sourceIcon(item.source_id)!} style={{ width: 16, height: 16, borderRadius: item.kind === "noticia" ? 3 : 8 }} resizeMode="contain" /> : null}
           <Text style={{ color: t.blue, fontWeight: "600", fontSize: 12 }}>{src?.name ?? item.source_id}</Text>
           <Text style={{ color: t.muted, fontSize: 12 }}>· {ago(item.published_at)}</Text>
           {isVideo && item.views ? <Text style={{ color: t.muted, fontSize: 12 }}>· {views(item.views)}</Text> : null}
@@ -200,6 +204,7 @@ export function LiveCard({ item, src, reminded, onToggle }: { item: Item; src?: 
       <View style={[s.row, { justifyContent: "space-between" }]}>
         <View style={[s.row, { gap: 8 }]}>
           <Text style={[s.tag, { backgroundColor: now ? t.blue : "#000", color: now ? t.blueInk : "#fff" }]}>{now ? "AO VIVO AGORA" : "AO VIVO EM BREVE"}</Text>
+          {sourceIcon(item.source_id) ? <RNImage source={sourceIcon(item.source_id)!} style={{ width: 18, height: 18, borderRadius: 9 }} resizeMode="contain" /> : null}
           <Text style={{ color: t.blue, fontWeight: "600", fontSize: 12 }}>{src?.name}</Text>
         </View>
         {!now && item.live_starts_at ? <Text style={[s.count, { color: t.blue }]}>{until(item.live_starts_at)}</Text> : null}

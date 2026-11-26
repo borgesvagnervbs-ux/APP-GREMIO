@@ -40,22 +40,18 @@ export async function getSources(): Promise<Source[]> {
   return check(await supabase.from("sources").select("id,kind,name,rank,yt_subscribers").order("kind").order("rank"));
 }
 
+/** Sites e canais que só falam do Grêmio: tudo deles vale. */
+export const GREMIO_SOURCES = new Set(["oficial", "gremiotv", "bage", "ccd", "careca"]);
+const GREMIO_RE = /gr[eê]mio|tricolor ga[uú]cho|imortal tricolor|\bgre-?nal\b|arena do gr/i;
+/** Só o que é sobre o Grêmio: fontes do Grêmio valem sempre; nas outras, o título ou o resumo precisa citar o clube. */
+export const aboutGremio = (i: Item) => GREMIO_SOURCES.has(i.source_id) || GREMIO_RE.test(i.title) || GREMIO_RE.test(i.summary ?? "");
+
+/** Notícias do Grêmio vindas só dos sites escolhidos (as mais recentes primeiro, mesmo que antigas). */
 export async function getNews(sites: string[], limit = 60): Promise<Item[]> {
   if (!sites.length) return [];
-  return realNews(check(await supabase.from("items").select("*").eq("kind", "noticia")
-    .in("source_id", sites).order("published_at", { ascending: false }).limit(limit)));
-}
-
-/** Últimas notícias de qualquer site (para completar o Início quando os sites escolhidos têm pouca coisa). */
-export async function getAnyNews(exclude: string[], limit = 12): Promise<Item[]> {
-  let q = supabase.from("items").select("*").eq("kind", "noticia");
-  if (exclude.length) q = q.not("id", "in", `(${exclude.map((x) => `"${x}"`).join(",")})`);
-  return realNews(check(await q.order("published_at", { ascending: false }).limit(limit)));
-}
-export async function getAnyVideos(exclude: string[], limit = 6): Promise<Item[]> {
-  let q = supabase.from("items").select("*").eq("kind", "video");
-  if (exclude.length) q = q.not("id", "in", `(${exclude.map((x) => `"${x}"`).join(",")})`);
-  return check(await q.order("published_at", { ascending: false }).limit(limit));
+  const rows: Item[] = check(await supabase.from("items").select("*").eq("kind", "noticia")
+    .in("source_id", sites).order("published_at", { ascending: false }).limit(400));
+  return realNews(rows).filter(aboutGremio).slice(0, limit);
 }
 
 export async function getItem(id: string): Promise<Item | null> {
@@ -69,10 +65,12 @@ export function ytId(item: Item): string | null {
   return item.url.match(/[?&]v=([\w-]{6,})/)?.[1] ?? null;
 }
 
+/** Vídeos do Grêmio vindos só dos canais escolhidos. */
 export async function getVideos(channels: string[], limit = 40): Promise<Item[]> {
   if (!channels.length) return [];
-  return check(await supabase.from("items").select("*").eq("kind", "video")
-    .in("source_id", channels).order("published_at", { ascending: false }).limit(limit));
+  const rows: Item[] = check(await supabase.from("items").select("*").eq("kind", "video")
+    .in("source_id", channels).order("published_at", { ascending: false }).limit(400));
+  return rows.filter(aboutGremio).slice(0, limit);
 }
 
 /** Lives agendadas ou acontecendo agora (agendadas há mais de 6h que nunca começaram ficam de fora). */
@@ -82,7 +80,7 @@ export async function getLives(channels: string[]): Promise<Item[]> {
   const rows: Item[] = check(await supabase.from("items").select("*").eq("kind", "live")
     .in("source_id", channels).in("live_status", ["upcoming", "live"])
     .order("live_starts_at", { ascending: true }).limit(30));
-  return rows.filter((l) => l.live_status === "live" || (l.live_starts_at ?? "") >= since);
+  return rows.filter((l) => aboutGremio(l) && (l.live_status === "live" || (l.live_starts_at ?? "") >= since));
 }
 
 const MATCH_COLS = "id,competition,round,home_team,away_team,home_logo,away_logo,kickoff_at,venue,city,note,referee,status,home_goals,away_goals";
@@ -158,6 +156,51 @@ const CRESTS: Record<string, number> = {
   "ypiranga-rs": require("../../assets/times/ypiranga.png"),
 };
 export const localCrest = (team: string) => CRESTS[team.trim().toLowerCase()] ?? null;
+
+/** Ícone de cada site e canal, guardado dentro do app. */
+const SOURCE_ICONS: Record<string, number> = {
+  bage: require("../../assets/fontes/bage.png"),
+  bandrs: require("../../assets/fontes/bandrs.png"),
+  c_band: require("../../assets/fontes/c_band.png"),
+  c_bands: require("../../assets/fontes/c_bands.png"),
+  c_caze: require("../../assets/fontes/c_caze.png"),
+  c_cpovo: require("../../assets/fontes/c_cpovo.png"),
+  c_desimp: require("../../assets/fontes/c_desimp.png"),
+  c_espn: require("../../assets/fontes/c_espn.png"),
+  c_gaucha: require("../../assets/fontes/c_gaucha.png"),
+  c_ge: require("../../assets/fontes/c_ge.png"),
+  c_guaiba: require("../../assets/fontes/c_guaiba.png"),
+  c_gzh: require("../../assets/fontes/c_gzh.png"),
+  c_jp: require("../../assets/fontes/c_jp.png"),
+  c_lance: require("../../assets/fontes/c_lance.png"),
+  c_premiere: require("../../assets/fontes/c_premiere.png"),
+  c_sportv: require("../../assets/fontes/c_sportv.png"),
+  c_tnt: require("../../assets/fontes/c_tnt.png"),
+  c_uol: require("../../assets/fontes/c_uol.png"),
+  careca: require("../../assets/fontes/careca.png"),
+  ccd: require("../../assets/fontes/ccd.png"),
+  cnn: require("../../assets/fontes/cnn.png"),
+  cpovo: require("../../assets/fontes/cpovo.png"),
+  espn: require("../../assets/fontes/espn.png"),
+  estadao: require("../../assets/fontes/estadao.png"),
+  folha: require("../../assets/fontes/folha.png"),
+  gazeta: require("../../assets/fontes/gazeta.png"),
+  ge: require("../../assets/fontes/ge.png"),
+  goal: require("../../assets/fontes/goal.png"),
+  gremiotv: require("../../assets/fontes/gremiotv.png"),
+  guaiba: require("../../assets/fontes/guaiba.png"),
+  gzh: require("../../assets/fontes/gzh.png"),
+  jc: require("../../assets/fontes/jc.png"),
+  lance: require("../../assets/fontes/lance.png"),
+  oficial: require("../../assets/fontes/oficial.png"),
+  osul: require("../../assets/fontes/osul.png"),
+  placar: require("../../assets/fontes/placar.png"),
+  terra: require("../../assets/fontes/terra.png"),
+  torcedores: require("../../assets/fontes/torcedores.png"),
+  trivela: require("../../assets/fontes/trivela.png"),
+  uol: require("../../assets/fontes/uol.png"),
+};
+export const sourceIcon = (id: string) => SOURCE_ICONS[id] ?? null;
 
 export const compLogo = (name: string) => COMPETITIONS.find((c) => c.name === name)?.logo ?? null;
 /** Campeonatos que aparecem nos jogos do ano, na ordem acima (os desconhecidos vão para o fim). */
