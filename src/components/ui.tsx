@@ -82,26 +82,33 @@ export function Chips<T extends string>({ options, value, onChange, padded = tru
   );
 }
 
-/** Filtros dos jogos: campeonato (com logo) + todos/casa/fora. Os dois valem juntos. */
-export function MatchFilters({ comps, comp, onComp, where, onWhere }: { comps: string[]; comp: string; onComp: (c: string) => void; where: Where; onWhere: (w: Where) => void }) {
+/** Campeonatos com logo. */
+export function CompChips({ comps, comp, onComp }: { comps: string[]; comp: string; onComp: (c: string) => void }) {
+  return <Chips<string> padded={false} value={comp} onChange={onComp}
+    options={[{ id: "todos", label: "Todos" }, ...comps.map((c) => ({ id: c, label: c, icon: compLogo(c) }))]} />;
+}
+
+/** Casa e fora / Em casa / Fora. */
+export function WhereButtons({ where, onWhere }: { where: Where; onWhere: (w: Where) => void }) {
   const t = useTheme();
   return (
-    <View style={{ gap: 8 }}>
-      <Chips<string> padded={false} value={comp} onChange={onComp}
-        options={[{ id: "todos", label: "Todos os campeonatos" }, ...comps.map((c) => ({ id: c, label: c, icon: compLogo(c) }))]} />
-      <View style={[s.row, { gap: 8 }]}>
-        {(["todos", "casa", "fora"] as Where[]).map((w) => {
-          const on = w === where;
-          return (
-            <Pressable key={w} onPress={() => onWhere(w)} accessibilityRole="button" accessibilityState={{ selected: on }}
-              style={[s.chip, { flex: 1, alignItems: "center", paddingVertical: 9, borderColor: on ? "#000" : t.line, backgroundColor: on ? "#000" : t.surface }]}>
-              <Text style={{ color: on ? "#fff" : t.fg, fontWeight: "700" }}>{w === "todos" ? "Casa e fora" : w === "casa" ? "Em casa" : "Fora"}</Text>
-            </Pressable>
-          );
-        })}
-      </View>
+    <View style={[s.row, { gap: 8 }]}>
+      {(["todos", "casa", "fora"] as Where[]).map((w) => {
+        const on = w === where;
+        return (
+          <Pressable key={w} onPress={() => onWhere(w)} accessibilityRole="button" accessibilityState={{ selected: on }}
+            style={[s.chip, { flex: 1, alignItems: "center", paddingVertical: 9, borderColor: on ? "#000" : t.line, backgroundColor: on ? "#000" : t.surface }]}>
+            <Text style={{ color: on ? "#fff" : t.fg, fontWeight: "700" }}>{w === "todos" ? "Casa e fora" : w === "casa" ? "Em casa" : "Fora"}</Text>
+          </Pressable>
+        );
+      })}
     </View>
   );
+}
+
+/** Filtros dos jogos: campeonato (com logo) + todos/casa/fora. Os dois valem juntos. */
+export function MatchFilters({ comps, comp, onComp, where, onWhere }: { comps: string[]; comp: string; onComp: (c: string) => void; where: Where; onWhere: (w: Where) => void }) {
+  return <View style={{ gap: 8 }}><CompChips comps={comps} comp={comp} onComp={onComp} /><WhereButtons where={where} onWhere={onWhere} /></View>;
 }
 
 export function CompLogo({ name, size = 18 }: { name: string; size?: number }) {
@@ -256,7 +263,7 @@ export function MatchCard({ m, highlight, onPress }: { m: Match; highlight?: boo
     : <View style={style}>{body}</View>;
 }
 
-export function StandingsTable({ rows }: { rows: Standing[] }) {
+export function StandingsTable({ rows, zones = true }: { rows: Standing[]; zones?: boolean }) {
   const t = useTheme();
   const head = (txt: string, w: number, left?: boolean) => <Text style={{ width: w, color: t.muted, fontSize: 11, fontWeight: "600", textAlign: left ? "left" : "center" }}>{txt}</Text>;
   const cell = (txt: string | number, w: number, bold?: boolean, color?: string) => <Text style={{ width: w, textAlign: "center", color: color ?? t.fg, fontWeight: bold ? "700" : "400", fontVariant: ["tabular-nums"] }}>{txt}</Text>;
@@ -264,7 +271,7 @@ export function StandingsTable({ rows }: { rows: Standing[] }) {
     <View style={[s.card, { backgroundColor: t.surface, borderColor: t.line, paddingVertical: 6 }]}>
       <View style={[s.row, s.trow, { borderLeftWidth: 4, borderLeftColor: "transparent" }]}>{head("#", 26)}<View style={{ flex: 1 }}>{head("Time", 100, true)}</View>{head("P", 34)}{head("J", 28)}{head("V", 28)}{head("SG", 34)}</View>
       {rows.map((r) => (
-        <View key={r.position} style={[s.row, s.trow, r.is_gremio && { backgroundColor: t.chip }, { borderTopColor: t.line, borderTopWidth: StyleSheet.hairlineWidth, borderLeftWidth: 4, borderLeftColor: r.position <= 6 ? t.blue : r.position > rows.length - 4 ? t.fg : "transparent" }]}>
+        <View key={r.position} style={[s.row, s.trow, r.is_gremio && { backgroundColor: t.chip }, { borderTopColor: t.line, borderTopWidth: StyleSheet.hairlineWidth, borderLeftWidth: 4, borderLeftColor: !zones ? "transparent" : r.position <= 6 ? t.blue : r.position > rows.length - 4 ? t.fg : "transparent" }]}>
           {cell(r.position, 26, true, r.is_gremio ? t.blue : undefined)}
           <View style={[s.row, { flex: 1, gap: 8, minWidth: 0 }]}><TeamCrest uri={r.crest} />
             <Text numberOfLines={1} style={{ color: r.is_gremio ? t.blue : t.fg, fontWeight: r.is_gremio ? "700" : "400", flexShrink: 1 }}>{r.team}</Text></View>
@@ -272,8 +279,10 @@ export function StandingsTable({ rows }: { rows: Standing[] }) {
         </View>
       ))}
       <View style={[s.row, { gap: 14, paddingHorizontal: 12, paddingTop: 10, paddingBottom: 4, flexWrap: "wrap" }]}>
-        <View style={[s.row, { gap: 6 }]}><View style={{ width: 10, height: 10, backgroundColor: t.blue }} /><Text style={{ color: t.muted, fontSize: 11 }}>Libertadores (1º ao 6º)</Text></View>
-        <View style={[s.row, { gap: 6 }]}><View style={{ width: 10, height: 10, backgroundColor: t.fg }} /><Text style={{ color: t.muted, fontSize: 11 }}>Rebaixamento (4 últimos)</Text></View>
+        {zones ? <>
+          <View style={[s.row, { gap: 6 }]}><View style={{ width: 10, height: 10, backgroundColor: t.blue }} /><Text style={{ color: t.muted, fontSize: 11 }}>Libertadores (1º ao 6º)</Text></View>
+          <View style={[s.row, { gap: 6 }]}><View style={{ width: 10, height: 10, backgroundColor: t.fg }} /><Text style={{ color: t.muted, fontSize: 11 }}>Rebaixamento (4 últimos)</Text></View>
+        </> : null}
         <Text style={{ color: t.muted, fontSize: 11 }}>P pontos · J jogos · V vitórias · SG saldo</Text>
       </View>
     </View>

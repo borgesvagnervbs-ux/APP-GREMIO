@@ -24,8 +24,12 @@ export type MatchDetails = { v?: number; events: MatchEvent[]; lineups: { home: 
 export type Standing = {
   position: number; team: string; crest: string | null; played: number; won: number; draw: number;
   lost: number; points: number; goal_diff: number; is_gremio: boolean;
+  competition?: string; grp?: string; goals_for?: number; goals_against?: number;
 };
 export type Prefs = { sites: string[]; channels: string[] };
+
+/** Títulos de verdade têm pelo menos 3 palavras (descarta lixo como "Tópicos"). */
+const realNews = (list: Item[]) => list.filter((i) => i.kind !== "noticia" || i.title.trim().split(/\s+/).length >= 3);
 
 function check<T>(r: { data: T | null; error: { message: string } | null }): T {
   if (r.error) throw new Error(r.error.message);
@@ -38,8 +42,20 @@ export async function getSources(): Promise<Source[]> {
 
 export async function getNews(sites: string[], limit = 60): Promise<Item[]> {
   if (!sites.length) return [];
-  return check(await supabase.from("items").select("*").eq("kind", "noticia")
-    .in("source_id", sites).order("published_at", { ascending: false }).limit(limit));
+  return realNews(check(await supabase.from("items").select("*").eq("kind", "noticia")
+    .in("source_id", sites).order("published_at", { ascending: false }).limit(limit)));
+}
+
+/** Últimas notícias de qualquer site (para completar o Início quando os sites escolhidos têm pouca coisa). */
+export async function getAnyNews(exclude: string[], limit = 12): Promise<Item[]> {
+  let q = supabase.from("items").select("*").eq("kind", "noticia");
+  if (exclude.length) q = q.not("id", "in", `(${exclude.map((x) => `"${x}"`).join(",")})`);
+  return realNews(check(await q.order("published_at", { ascending: false }).limit(limit)));
+}
+export async function getAnyVideos(exclude: string[], limit = 6): Promise<Item[]> {
+  let q = supabase.from("items").select("*").eq("kind", "video");
+  if (exclude.length) q = q.not("id", "in", `(${exclude.map((x) => `"${x}"`).join(",")})`);
+  return check(await q.order("published_at", { ascending: false }).limit(limit));
 }
 
 export async function getVideos(channels: string[], limit = 40): Promise<Item[]> {
@@ -194,7 +210,43 @@ export function num(n: number | null, dec = 1): string {
 }
 
 export async function getStandings(): Promise<Standing[]> {
-  return check(await supabase.from("standings").select("*").order("position"));
+  const rows: Standing[] = check(await supabase.from("standings").select("*").order("position"));
+  return rows.map((r) => ({ ...r, competition: r.competition ?? "Brasileirão", grp: r.grp ?? "" }));
+}
+
+/** Como o Grêmio aparece em cada campeonato: tabela (pontos corridos), classificação (grupos) ou mata-mata. */
+export type CompView = "tabela" | "fase" | "agenda" | "resultados";
+export function viewsFor(comp: string): { id: CompView; label: string }[] {
+  const base: { id: CompView; label: string }[] = [{ id: "agenda", label: "Próximos jogos" }, { id: "resultados", label: "Resultados" }];
+  if (comp === "Brasileirão" || comp === "Gauchão") return [{ id: "tabela", label: "Tabela" }, ...base];
+  if (comp === "Libertadores" || comp === "Sul-Americana") return [{ id: "tabela", label: "Classificação" }, ...base];
+  if (comp === "Copa do Brasil") return [{ id: "fase", label: "Fase e confronto" }, ...base];
+  return base;
+}
+
+/** Confrontos de mata-mata (ida e volta) do Grêmio num campeonato, do mais recente para o mais antigo. */
+export type Tie = { round: string; opponent: string; legs: Match[]; pro: number; contra: number; done: boolean; result: "classificado" | "eliminado" | "andamento" | "a_disputar" };
+export function ties(list: Match[]): Tie[] {
+  const groups = new Map<string, Match[]>();
+  for (const m of list) {
+    const opp = isGremio(m.home_team) ? m.away_team : m.home_team;
+    const key = `${m.round ?? "Fase inicial"}|${opp}`;
+    groups.set(key, [...(groups.get(key) ?? []), m]);
+  }
+  const out: Tie[] = [];
+  for (const [key, legs] of groups) {
+    legs.sort((a, b) => a.kickoff_at.localeCompare(b.kickoff_at));
+    const [round, opponent] = key.split("|");
+    const fin = legs.filter((m) => FINISHED.includes(m.status) && m.home_goals != null);
+    const r = record(fin);
+    const done = fin.length === legs.length;
+    const note = legs[legs.length - 1].note ?? "";
+    let result: Tie["result"] = fin.length === 0 ? "a_disputar" : "andamento";
+    if (done && /(advance|win)/i.test(note)) result = /(gr[eê]mio|\bGRE\b) (advance|win)/i.test(note) ? "classificado" : "eliminado";
+    else if (done && !/1st Leg/i.test(note)) result = r.gp > r.gc ? "classificado" : r.gp < r.gc ? "eliminado" : "andamento";
+    out.push({ round, opponent, legs, pro: r.gp, contra: r.gc, done, result });
+  }
+  return out.sort((a, b) => b.legs[0].kickoff_at.localeCompare(a.legs[0].kickoff_at));
 }
 
 // ---------- formatação ----------
