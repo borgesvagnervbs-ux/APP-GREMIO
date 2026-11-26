@@ -1,16 +1,16 @@
 {
   "expo": {
-    "name": "app-gremio",
+    "name": "Tricolor em Dia",
     "slug": "app-gremio",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
-    "userInterfaceStyle": "light",
+    "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "splash": {
       "image": "./assets/splash-icon.png",
       "resizeMode": "contain",
-      "backgroundColor": "#ffffff"
+      "backgroundColor": "#0a1a2c"
     },
     "ios": {
       "supportsTablet": true
@@ -18,13 +18,29 @@
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#ffffff"
+        "backgroundColor": "#0a1a2c"
       },
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false
     },
     "web": {
-      "favicon": "./assets/favicon.png"
+      "favicon": "./assets/favicon.png",
+      "output": "single",
+      "bundler": "metro",
+      "name": "Tricolor em Dia",
+      "shortName": "Tricolor",
+      "themeColor": "#0a1a2c",
+      "backgroundColor": "#0a1a2c",
+      "lang": "pt-BR"
+    },
+    "plugins": [
+      "expo-router",
+      "expo-web-browser"
+    ],
+    "scheme": "tricoloremdia",
+    "experiments": {
+      "baseUrl": "/app-gremio",
+      "typedRoutes": false
     }
   }
 }
