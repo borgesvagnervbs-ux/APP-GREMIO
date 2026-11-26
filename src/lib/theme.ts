@@ -33,6 +33,9 @@ export function useTheme(): Theme {
   return useColorScheme() === "dark" ? dark : light;
 }
 
+// As três cores do Grêmio, usadas no cabeçalho nesta ordem
+export const BRAND = { blue: "#0d6db3", white: "#ffffff", black: "#000000" };
+
 // Escudo do Grêmio (mesma imagem usada na tabela do Brasileirão)
 export const CREST_URL = "https://crests.football-data.org/1767.png";
 

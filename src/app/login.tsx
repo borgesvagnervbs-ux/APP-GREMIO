@@ -44,7 +44,7 @@ export default function Login() {
   const input = [st.input, { color: "#fff" }];
   return (
     <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : undefined} style={{ flex: 1, backgroundColor: t.head }}>
-      <StripeBand />
+      <StripeBand height={10} />
       <ScrollView contentContainerStyle={{ flexGrow: 1, justifyContent: "center", paddingVertical: 48 }} keyboardShouldPersistTaps="handled">
         <View style={[s.wrap, { gap: 18 }]}>
           <View style={st.crest}><Crest size={64} /></View>

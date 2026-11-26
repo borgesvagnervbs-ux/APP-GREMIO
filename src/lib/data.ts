@@ -11,7 +11,13 @@ export type Match = {
   id: number; competition: string; round: string | null; home_team: string; away_team: string;
   home_logo: string | null; away_logo: string | null; kickoff_at: string; venue: string | null;
   status: string; home_goals: number | null; away_goals: number | null;
+  city?: string | null; note?: string | null; referee?: string | null;
+  details?: MatchDetails | null;
 };
+export type MatchEvent = { min: string; side: "home" | "away"; type: "gol" | "penalti" | "contra" | "amarelo" | "vermelho" | "sub" | "penalti_perdido"; player: string; other?: string | null };
+export type Player = { n: string | null; name: string; pos: string; in?: string | null; out?: string | null; goals?: number; card?: "amarelo" | "vermelho" | null };
+export type Lineup = { team: string; formation: string | null; starters: Player[]; bench: Player[] };
+export type MatchDetails = { events: MatchEvent[]; lineups: { home: Lineup | null; away: Lineup | null }; attendance: number | null };
 export type Standing = {
   position: number; team: string; crest: string | null; played: number; won: number; draw: number;
   lost: number; points: number; goal_diff: number; is_gremio: boolean;
@@ -49,8 +55,46 @@ export async function getLives(channels: string[]): Promise<Item[]> {
   return rows.filter((l) => l.live_status === "live" || (l.live_starts_at ?? "") >= since);
 }
 
+const MATCH_COLS = "id,competition,round,home_team,away_team,home_logo,away_logo,kickoff_at,venue,city,note,referee,status,home_goals,away_goals";
 export async function getMatches(): Promise<Match[]> {
-  return check(await supabase.from("matches").select("*").order("kickoff_at"));
+  return check(await supabase.from("matches").select(MATCH_COLS).order("kickoff_at"));
+}
+
+export async function getMatch(id: number): Promise<Match | null> {
+  const r = await supabase.from("matches").select(MATCH_COLS + ",details").eq("id", id).maybeSingle();
+  if (r.error) throw new Error(r.error.message);
+  return r.data as Match | null;
+}
+
+export const isGremio = (name: string) => /gr[eê]mio/i.test(name);
+
+/** As observações dos jogos vêm em inglês ("2nd Leg - Grêmio win 4-1 on aggregate"): traduz. */
+export function notePt(note: string | null | undefined): string | null {
+  if (!note) return null;
+  return note
+    .replace(/\b1st Leg\b/gi, "Jogo de ida").replace(/\b2nd Leg\b/gi, "Jogo de volta")
+    .replace(/Tied on aggregate/gi, "Empate no agregado")
+    .replace(/(.+?) win (\d+-\d+) on aggregate/gi, "$1 venceu por $2 no agregado")
+    .replace(/(.+?) advance (\d+-\d+) on penalties/gi, "$1 avançou nos pênaltis por $2")
+    .replace(/(.+?) advance (\d+-\d+) on aggregate/gi, "$1 avançou com $2 no agregado")
+    .replace(/(.+?) advance on away goals/gi, "$1 avançou pelo gol fora")
+    .replace(/\bGRE\b/g, "Grêmio").replace(/(\d+)-(\d+)/g, "$1 a $2");
+}
+
+const CITY_PT: Record<string, string> = { Bage: "Bagé", Montevideo: "Montevidéu", "Aracaju, Sergipe": "Aracaju" };
+export const cityPt = (c: string | null | undefined) => (c ? CITY_PT[c] ?? c : null);
+
+/** Vitórias, empates, derrotas e pontos do Grêmio numa lista de jogos encerrados. */
+export function record(list: Match[]) {
+  const r = { j: 0, v: 0, e: 0, d: 0, gp: 0, gc: 0, pts: 0 };
+  for (const m of list) {
+    if (m.home_goals == null || m.away_goals == null) continue;
+    const home = isGremio(m.home_team);
+    const pro = home ? m.home_goals : m.away_goals, contra = home ? m.away_goals : m.home_goals;
+    r.j++; r.gp += pro; r.gc += contra;
+    if (pro > contra) { r.v++; r.pts += 3; } else if (pro === contra) { r.e++; r.pts += 1; } else r.d++;
+  }
+  return r;
 }
 
 export async function getStandings(): Promise<Standing[]> {

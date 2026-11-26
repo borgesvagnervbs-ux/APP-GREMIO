@@ -3,10 +3,10 @@ import { router } from "expo-router";
 import { useState } from "react";
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { Button, Crest, DISPLAY, Loading, s, StripeBand } from "../components/ui";
+import { Button, Crest, DISPLAY, Loading, s } from "../components/ui";
 import { prefsReady, useSession } from "../lib/session";
 import { useSources } from "../lib/sources";
-import { useTheme } from "../lib/theme";
+import { BRAND, useTheme } from "../lib/theme";
 
 const MAX = 5;
 
@@ -44,20 +44,22 @@ export default function Escolher() {
 
   return (
     <View style={{ flex: 1, backgroundColor: t.bg }}>
-      <View style={{ backgroundColor: t.head, overflow: "hidden" }}>
-        <View style={{ paddingTop: ins.top + 18, paddingBottom: 18 }}>
-        <View style={[s.wrap, { gap: 6 }]}>
-          <View style={[s.row, { gap: 6, marginBottom: 8 }]}>
-            <View style={[st.step, { backgroundColor: "#fff" }]} /><View style={[st.step, { backgroundColor: isSites ? "rgba(0,0,0,0.35)" : "#fff" }]} />
+      <View>
+        <View style={{ backgroundColor: BRAND.blue, paddingTop: ins.top + 18, paddingBottom: 14 }}>
+          <View style={[s.wrap, { gap: 8 }]}>
+            <View style={[s.row, { gap: 6 }]}>
+              <View style={[st.step, { backgroundColor: "#fff" }]} /><View style={[st.step, { backgroundColor: isSites ? "rgba(0,0,0,0.35)" : "#fff" }]} />
+            </View>
+            <View style={[s.row, { gap: 10 }]}><View style={st.crest}><Crest size={30} /></View><Text style={[st.title]}>{isSites ? "Escolha 5 sites" : "Escolha 5 canais"}</Text></View>
           </View>
-          <View style={[s.row, { gap: 10 }]}><View style={st.crest}><Crest size={30} /></View><Text style={[st.title]}>{isSites ? "Escolha 5 sites" : "Escolha 5 canais"}</Text></View>
-          <Text style={{ color: t.headMuted, fontSize: 14 }}>
+        </View>
+        <View style={{ backgroundColor: BRAND.white, paddingVertical: 10 }}>
+          <Text style={[s.wrap, { color: "#0d1622", fontSize: 14 }]}>
             {isSites ? "Os 20 sites que mais falam do Grêmio. Você vai ver as notícias dos 5 que escolher."
               : "Os 20 canais do YouTube mais seguidos sobre o Grêmio. Você vai ver os vídeos e as lives dos 5 que escolher."}
           </Text>
         </View>
-        </View>
-        <StripeBand />
+        <View style={{ backgroundColor: BRAND.black, height: 14 }} />
       </View>
 
       {!list.length ? <Loading error={error} onRetry={retry} /> :

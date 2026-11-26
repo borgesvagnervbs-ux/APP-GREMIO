@@ -3,8 +3,8 @@ import * as WebBrowser from "expo-web-browser";
 import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import { ActivityIndicator, Platform, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { ago, dateTime, duration, FINISHED, LIVE_MATCH, until, views, type Item, type Match, type Source, type Standing } from "../lib/data";
-import { CREST_URL, SHADES, useTheme, type Theme } from "../lib/theme";
+import { ago, cityPt, dateTime, notePt, duration, FINISHED, LIVE_MATCH, until, views, type Item, type Match, type Source, type Standing } from "../lib/data";
+import { BRAND, CREST_URL, SHADES, useTheme, type Theme } from "../lib/theme";
 
 export const DISPLAY = Platform.select({ web: "'Barlow Condensed','Arial Narrow',system-ui,sans-serif", default: undefined });
 
@@ -33,55 +33,47 @@ export function useLoad<T>(fn: () => Promise<T>, deps: unknown[], initial: T) {
 }
 
 // ---------- cabeçalho tricolor ----------
-/** Listras verticais da camisa (azul, preto e branco) no lado direito do cabeçalho. */
-export function JerseyStripes({ style }: { style?: object }) {
-  const unit = ["#000000", "#ffffff", "#0d6db3", "#ffffff"];
-  const widths = [16, 3, 22, 3];
-  const bars = Array.from({ length: 30 }, (_, i) => unit.map((c, j) => <View key={`${i}-${j}`} style={{ width: widths[j], backgroundColor: c }} />)).flat();
-  return <View pointerEvents="none" style={[s.stripes, style]}>{bars}</View>;
-}
-
-/** Faixa listrada (camisa tricolor) embaixo do cabeçalho. */
-export function StripeBand() {
-  return <JerseyStripes style={{ position: "relative", right: 0, width: "100%", height: 16 }} />;
+/** Faixa com as três cores, lado a lado: azul, branco e preto. */
+export function StripeBand({ height = 8 }: { height?: number }) {
+  return <View style={{ flexDirection: "row", height }}>{[BRAND.blue, BRAND.white, BRAND.black].map((c) => <View key={c} style={{ flex: 1, backgroundColor: c }} />)}</View>;
 }
 
 export function Crest({ size = 40 }: { size?: number }) {
   return <Image source={{ uri: CREST_URL }} style={{ width: size, height: size }} contentFit="contain" accessibilityLabel="Escudo do Grêmio" />;
 }
 
+/** Cabeçalho em três faixas, nesta ordem: azul (escudo e título), branco (descrição) e preto (abas). */
 export function Header({ title, subtitle, right, children }: { title: string; subtitle?: string; right?: ReactNode; children?: ReactNode }) {
   const t = useTheme(); const ins = useSafeAreaInsets();
   return (
-    <View style={{ backgroundColor: t.head, overflow: "hidden" }}>
-      <View style={{ paddingTop: ins.top + 10 }}>
-        <View style={[s.wrap, s.row, { justifyContent: "space-between", paddingBottom: children ? 10 : 14 }]}>
+    <View>
+      <View style={{ backgroundColor: BRAND.blue, paddingTop: ins.top + 10, paddingBottom: 12 }}>
+        <View style={[s.wrap, s.row, { justifyContent: "space-between" }]}>
           <View style={[s.row, { flexShrink: 1, gap: 10 }]}>
             <View style={s.crestBox}><Crest size={34} /></View>
-            <View style={{ flexShrink: 1 }}>
-              <Text style={[s.h1, { color: t.headFg }]}>{title}</Text>
-              {subtitle ? <Text style={{ color: t.headMuted, fontSize: 12, marginTop: 2 }}>{subtitle}</Text> : null}
-            </View>
+            <Text style={[s.h1, { color: "#fff", flexShrink: 1 }]} numberOfLines={1}>{title}</Text>
           </View>
           {right}
         </View>
-        {children}
       </View>
-      <StripeBand />
+      <View style={{ backgroundColor: BRAND.white, paddingVertical: 8, minHeight: 12 }}>
+        {subtitle ? <Text style={[s.wrap, { color: "#0d1622", fontSize: 13, fontWeight: "500" }]}>{subtitle}</Text> : null}
+      </View>
+      <View style={{ backgroundColor: BRAND.black, paddingTop: children ? 10 : 0, minHeight: 18 }}>{children}</View>
+      <View style={{ height: 1, backgroundColor: t.line }} />
     </View>
   );
 }
 
 export function Chips<T extends string>({ options, value, onChange }: { options: { id: T; label: string }[]; value: T; onChange: (v: T) => void }) {
-  const t = useTheme();
   return (
     <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={[s.wrapH, { gap: 8, paddingBottom: 12 }]}>
       {options.map((o) => {
         const on = o.id === value;
         return (
           <Pressable key={o.id} onPress={() => onChange(o.id)} accessibilityRole="button" accessibilityState={{ selected: on }}
-            style={[s.chip, { borderColor: on ? "#fff" : "rgba(255,255,255,0.55)", backgroundColor: on ? "#fff" : "rgba(0,0,0,0.25)" }]}>
-            <Text style={{ color: on ? t.head : "#ffffff", fontSize: 13, fontWeight: on ? "600" : "400" }}>{o.label}</Text>
+            style={[s.chip, { borderColor: on ? BRAND.blue : "rgba(255,255,255,0.5)", backgroundColor: on ? BRAND.blue : "transparent" }]}>
+            <Text style={{ color: "#ffffff", fontSize: 13, fontWeight: on ? "600" : "400" }}>{o.label}</Text>
           </Pressable>
         );
       })}
@@ -203,22 +195,37 @@ function TeamCrest({ uri }: { uri: string | null }) {
   return uri ? <Image source={{ uri }} style={{ width: 28, height: 28 }} contentFit="contain" /> : <View style={{ width: 28, height: 28 }} />;
 }
 
-export function MatchCard({ m, highlight }: { m: Match; highlight?: boolean }) {
+export function venueText(m: Match): string | null {
+  return [m.venue, cityPt(m.city)].filter(Boolean).join(" · ") || null;
+}
+
+export function MatchCard({ m, highlight, onPress }: { m: Match; highlight?: boolean; onPress?: () => void }) {
   const t = useTheme();
   const done = FINISHED.includes(m.status), live = LIVE_MATCH.includes(m.status);
-  return (
-    <View style={[s.card, { backgroundColor: t.surface, borderColor: highlight ? t.blue : t.line, padding: 14, gap: 8 }]}>
+  const place = venueText(m);
+  const body = (
+    <>
       <View style={[s.row, { justifyContent: "space-between", gap: 8 }]}>
         <View style={[s.row, { flex: 1, gap: 8 }]}><TeamCrest uri={m.home_logo} /><Text numberOfLines={1} style={[s.team, { color: t.fg, flexShrink: 1 }]}>{m.home_team}</Text></View>
         <Text style={[s.score, { color: live ? t.blue : t.fg }]}>{done || live ? `${m.home_goals ?? 0} × ${m.away_goals ?? 0}` : "×"}</Text>
         <View style={[s.row, { flex: 1, gap: 8, justifyContent: "flex-end" }]}><Text numberOfLines={1} style={[s.team, { color: t.fg, flexShrink: 1, textAlign: "right" }]}>{m.away_team}</Text><TeamCrest uri={m.away_logo} /></View>
       </View>
+      {m.note ? <Text style={{ color: t.fg, fontSize: 12, textAlign: "center" }}>{notePt(m.note)}</Text> : null}
       <View style={[s.row, { justifyContent: "space-between", flexWrap: "wrap", gap: 6 }]}>
         <Text style={{ color: t.muted, fontSize: 12 }}>{live ? "Em andamento · " : highlight ? "Próximo jogo · " : ""}{dateTime(m.kickoff_at)}</Text>
         <Text style={{ color: t.muted, fontSize: 12 }}>{m.competition}{m.round ? ` · ${m.round}` : ""}</Text>
       </View>
-    </View>
+      <View style={[s.row, { gap: 6, justifyContent: "space-between" }]}>
+        <Text numberOfLines={2} style={{ color: t.fg, fontSize: 12, flexShrink: 1 }}>📍 {place ?? "Local a confirmar"}</Text>
+        {onPress ? <Text style={{ color: t.blue, fontSize: 12, fontWeight: "700", flexShrink: 0 }}>Ver resumo ›</Text> : null}
+      </View>
+    </>
   );
+  const style = [s.card, { backgroundColor: t.surface, borderColor: highlight ? t.blue : t.line, padding: 14, gap: 8 }];
+  return onPress
+    ? <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel={`Resumo de ${m.home_team} ${m.home_goals} x ${m.away_goals} ${m.away_team}`}
+        style={({ pressed }) => [...style, { opacity: pressed ? 0.85 : 1 }]}>{body}</Pressable>
+    : <View style={style}>{body}</View>;
 }
 
 export function StandingsTable({ rows }: { rows: Standing[] }) {
@@ -268,7 +275,6 @@ export const s = StyleSheet.create({
   mini: { fontWeight: "700", fontSize: 13, paddingHorizontal: 10, paddingVertical: 6, borderRadius: 8, overflow: "hidden" },
   team: { fontFamily: DISPLAY, fontSize: 17, fontWeight: "700", textTransform: "uppercase" },
   score: { fontFamily: DISPLAY, fontSize: 24, fontWeight: "800", minWidth: 64, textAlign: "center", fontVariant: ["tabular-nums"] },
-  stripes: { position: "absolute", top: 0, bottom: 0, right: -8, width: "42%", flexDirection: "row", overflow: "hidden" },
   crestBox: { width: 46, height: 46, borderRadius: 23, backgroundColor: "#fff", alignItems: "center", justifyContent: "center" },
   trow: { paddingHorizontal: 8, paddingVertical: 7 },
 });
